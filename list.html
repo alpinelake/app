@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <link rel="icon" href="data:,">
+  <script src="/app/db.js"></script>
+  <title>List</title>
+  <style>
+    :root {
+      --background: hsl(224, 20%, 10%);
+      --background-light: hsl(224, 20%, 20%);
+      --background-light-contrast: #85ace7;
+      --dark: #0f3460;
+      --highlight: #e94560;
+      --light: #f9f9f9;
+    }
+    html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
+    input, button, select { box-sizing: border-box; font-size: inherit; font-family: inherit; }
+    button { user-select: none; font-size: .9em; }
+    textarea { font-family: inherit; font-size: inherit; resize: none; field-sizing: content; }
+    body {
+      font-family: sans-serif;
+      font-size: 1.2em;
+      justify-content: center;
+      background: black;
+    }
+    #app {
+      position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      width: min(100%, 500px);
+      box-sizing: border-box;
+      background: var(--background);
+      color: var(--light);
+    }
+    #header {
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      background: var(--background-light);
+      color: var(--light);
+    }
+    #listSelect {
+      flex: 1;
+      padding: 20px;
+      appearance: none;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+    #header .actions {
+      display: flex;
+      gap: 10px;
+      font-size: .9em;
+      margin: 20px 10px 20px 0;
+    }
+
+    #clearButton, #deleteListButton {
+      background: none;
+      border: none;
+      color: var(--background-light-contrast);
+    }
+    #clearButton:disabled { opacity: .5; }
+    #createListButton {
+      border: 1px solid black;
+      color: black;
+    }
+    
+    body:not(.loaded) #listEntries { pointer-events: none; opacity: .5; }
+    body:not(.loaded) #footer { display: none; }
+
+    #listEntries {
+      display: flex;
+      flex-direction: column;
+      overflow: scroll;
+      padding: 10px 15px;
+      scrollbar-width: none;
+      font-size: .9em;
+    }
+    .entry { display: flex; align-items: center; gap: 5px; }
+    .entry.checked textarea { opacity: .5; }
+    .entry.placeholder textarea { border-bottom: 1px dashed var(--background-light); }
+    .entry input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      appearance: none;
+      outline: 1px solid var(--light);
+      background: none;
+    }
+    .entry input[type="checkbox"]:checked {
+      outline: 1px solid black;
+      background: var(--background-light);
+    }
+    .entry input[type="checkbox"]:disabled {
+      opacity: .3;
+    }
+    .entry textarea { flex: 1; border: none; outline: none; margin: 5px; overflow: hidden; background: none; color: inherit; }
+    .entry.checked textarea { text-decoration: line-through; }
+    .entry button.delete { background: none; border: none; color: var(--highlight); margin: 0 5px; font-size: 1.2rem; }
+    #listEntries:not(.focused) button.delete { visibility: hidden; }
+
+    #footer { display: flex; padding: 10px 20px; font-size: .9em; }
+    #clear { display: flex; gap: 10px; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="header">
+      <select id="listSelect"></select>
+      <div class="actions">
+        <button id="deleteListButton">Delete</button>
+        <button id="createListButton">Create</button>
+      </div>
+    </div>
+    <div id="listEntries"></div>
+    <div id="footer">
+      <div id="clear">
+        <div id="clearHint"></div>
+        <button id="clearButton">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function compose(func) {
+      let lastKey = null;
+      return function (...args) {
+        const key = JSON.stringify(args);
+        if (lastKey != key) {
+          func(...args);
+          lastKey = key;
+        }
+      };
+    }
+
+    const storeName = "listDB";
+    const urlKey = "id";
+    let db = null;
+    let lists = null;
+    let autoFocusPlaceholder = false;
+    let autoFocusEntryIndex = null;
+
+    function render(id) {
+      renderListOptions(lists, id || listSelect.value);
+      const list = lists.find((l) => l.id == listSelect.value);
+      document.body.classList.toggle('loaded', !!list);
+      renderList(list);
+      deleteListButton.disabled = !list;
+      if (autoFocusPlaceholder) {
+        listEntries.querySelector(`.placeholder textarea`).focus();
+        autoFocusPlaceholder = false;
+      } else if (autoFocusEntryIndex != null) {
+        listEntries.querySelector(`[data-idx="${autoFocusEntryIndex}"] textarea`).focus();
+        autoFocusEntryIndex = null;
+      }
+
+      if (listSelect.value) {
+        const url = new URL(window.location);
+        url.searchParams.set(urlKey, listSelect.value);
+        history.replaceState(null, '', url);
+      }
+    }
+
+    const ItemStatus = {
+      Checked: 1
+    };
+
+    const renderList = compose((list) => {
+      listEntries.replaceChildren();
+      const entries = list?.entries || [];
+      let checkedCount = 0;
+
+      entries.forEach((entry, index) => {
+        const el = document.createElement("div");
+        el.className = "entry";
+        el.dataset.idx = index;
+        const check = document.createElement("input");
+        check.type = "checkbox";
+        check.checked = entry.status == ItemStatus.Checked;
+        check.addEventListener("change", (event) => {
+          entry.status = check.checked ? ItemStatus.Checked : null;
+          updateRecord(db, listSelect.value, list).then(() => {
+            render();
+          });
+        });
+        if (entry.status == ItemStatus.Checked) {
+          checkedCount += 1;
+        }
+        const text = document.createElement("textarea");
+        text.value = entry.text;
+        el.dataset.original = entry.text;
+        text.spellcheck = false;
+        text.addEventListener('keydown', (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+        text.addEventListener('focus', (e) => {
+          listEntries.classList.add('focused');
+        });
+        text.addEventListener('blur', (e) => {
+          listEntries.classList.remove('focused');
+          const current = text.value;
+          const diff = el.dataset.original !== current;
+          if (diff) {
+            el.dataset.original = current;
+            entry.text = current;
+            updateRecord(db, list.id, { entries });
+          }
+        });
+        const del = document.createElement("button");
+        del.innerText = "x";
+        del.className = "delete";
+        del.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          entries.splice(index, 1);
+          updateRecord(db, list.id, { entries });
+          autoFocusEntryIndex = index;
+          render();
+        });
+        el.append(check, text, del);
+        listEntries.append(el);
+        el.classList.toggle('checked', entry.status == ItemStatus.Checked);
+      });
+      const placeholder = document.createElement("div");
+      placeholder.className = "entry placeholder";
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.disabled = true;
+      const text = document.createElement("textarea");
+      text.addEventListener('focus', (e) => {
+        listEntries.classList.add('focused');
+      });
+      text.addEventListener('blur', (e) => {
+        listEntries.classList.remove('focused');
+      });
+      text.addEventListener('keydown', (e) => {
+        if (list && e.key === "Enter") {
+          e.preventDefault();
+          e.stopPropagation();
+          entries.push({ text: e.currentTarget.value });
+          autoFocusPlaceholder = true;
+          updateRecord(db, list.id, { entries });
+          render();
+        }
+      });
+      placeholder.append(check, text);
+      listEntries.append(placeholder);
+
+      clearHint.innerText = `${checkedCount}/${entries.length} marked done`;
+      clearButton.disabled = checkedCount == 0;
+    });
+
+    listSelect.addEventListener('change', (event) => {
+      render();
+    });
+
+    const renderListOptions = compose((lists, selectId) => {
+      let chooseId = null;
+      listSelect.replaceChildren();
+      lists.forEach((list, index) => {
+        const el = document.createElement("option");
+        el.value = list.id;
+        el.innerText = list.name;
+        if (list.id == selectId) {
+          chooseId = list.id;
+        }
+        listSelect.append(el);
+      });
+      listSelect.value = chooseId || lists[0]?.id;
+    });
+
+    deleteListButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const list = lists.find((l) => l.id == listSelect.value);
+      let confirmation = confirm(`Deleting list`);
+      if (confirmation) {
+        deleteRecord(db, list.id);
+        loadLists(null);
+      }
+    });
+
+    createListButton.addEventListener('click', (e) => {
+      let name = prompt(`Name`);
+      if (name) {
+        createList(name);
+      }
+    });
+
+    clearButton.addEventListener('click', (e) => {
+      const list = lists.find((l) => l.id == listSelect.value);
+      list.entries = list.entries.filter((entry) => entry.status != ItemStatus.Checked);
+      updateRecord(db, list.id, list).then(() => {
+        render();
+      });
+    });
+
+    async function loadLists(id) {
+      db = await openDatabase(storeName);
+      getAll(db).then((result) => {
+        lists = result;
+        render(id);
+      });
+    }
+
+    async function createList(name) {
+      addRecord(db, {
+        name,
+        entries: [],
+        createdAt: Date.now()
+      }).then((id) => {
+        loadLists(id);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const id = searchParams.get(urlKey);
+      loadLists(id);
+    });
+
+  </script>
+
+</body>
+</html>
