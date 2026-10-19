@@ -16,8 +16,8 @@
       --light: #f9f9f9;
     }
     html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
-    input, button, select { box-sizing: border-box; font-size: inherit; font-family: inherit; }
-    button { user-select: none; font-size: .9em; }
+    input, button, select { font-size: inherit; font-family: inherit; margin: 0; }
+    button { user-select: none; }
     textarea { font-family: inherit; font-size: inherit; resize: none; field-sizing: content; }
     body {
       font-family: sans-serif;
@@ -54,7 +54,7 @@
       display: flex;
       gap: 10px;
       font-size: .9em;
-      margin: 20px 10px 20px 0;
+      margin: 20px 20px 20px 0;
     }
 
     #clearButton, #deleteListButton {
@@ -62,9 +62,13 @@
       border: none;
       color: var(--background-light-contrast);
     }
-    #clearButton:disabled { opacity: .5; }
+    #deleteListButton:disabled,
+    #clearButton:disabled {
+      opacity: .5;
+    }
     #createListButton {
       border: 1px solid black;
+      border-radius: 4px;
       color: black;
     }
     
@@ -102,7 +106,7 @@
     #listEntries:not(.focused) button.delete { visibility: hidden; }
 
     #footer { display: flex; padding: 10px 20px; font-size: .9em; }
-    #clear { display: flex; gap: 10px; align-items: center; }
+    #clear { display: flex; gap: 10px; }
   </style>
 </head>
 <body>
@@ -156,11 +160,11 @@
         autoFocusEntryIndex = null;
       }
 
-      if (listSelect.value) {
-        const url = new URL(window.location);
-        url.searchParams.set(urlKey, listSelect.value);
-        history.replaceState(null, '', url);
-      }
+      //if (listSelect.value) {
+      //  const url = new URL(window.location);
+      //  url.searchParams.set(urlKey, listSelect.value);
+      //  history.replaceState(null, '', url);
+      //}
     }
 
     const ItemStatus = {
@@ -260,18 +264,26 @@
     });
 
     const renderListOptions = compose((lists, selectId) => {
-      let chooseId = null;
       listSelect.replaceChildren();
+
+      const placeholder = document.createElement("option");
+      placeholder.value = ""; 
+      placeholder.disabled = true; 
+      placeholder.hidden = true; 
+      placeholder.innerText = "Select list...";
+      listSelect.append(placeholder);
+
+      let foundId = null;
       lists.forEach((list, index) => {
         const el = document.createElement("option");
         el.value = list.id;
         el.innerText = list.name;
         if (list.id == selectId) {
-          chooseId = list.id;
+          foundId = list.id;
         }
         listSelect.append(el);
       });
-      listSelect.value = chooseId || lists[0]?.id;
+      listSelect.value = foundId || "";
     });
 
     deleteListButton.addEventListener('click', (e) => {
@@ -319,9 +331,10 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const id = searchParams.get(urlKey);
-      loadLists(id);
+      //const searchParams = new URLSearchParams(window.location.search);
+      //const id = searchParams.get(urlKey);
+      //loadLists(id);
+      loadLists();
     });
 
   </script>
