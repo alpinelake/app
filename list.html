@@ -39,37 +39,39 @@
       display: flex;
       justify-content: space-between;
       gap: 5px;
+      padding: 0 20px;
       background: var(--background-light);
       color: var(--light);
     }
     #listSelect {
-      flex: 1;
-      padding: 20px;
+      field-sizing: content;
+      padding: 20px 0;
       appearance: none;
       border: none;
       background: none;
       color: inherit;
+      min-width: 50px;
     }
     #header .actions {
-      display: flex;
-      gap: 10px;
       font-size: .9em;
-      margin: 20px 20px 20px 0;
+      align-self: center;
     }
 
-    #clearButton, #deleteListButton {
+    #deleteListButton {
+      font-size: 1.2em;
+    }
+    #clearButton,
+    #deleteListButton,
+    #createListButton {
       background: none;
       border: none;
       color: var(--background-light-contrast);
     }
-    #deleteListButton:disabled,
+    #deleteListButton:disabled {
+      visibility: hidden;
+    }
     #clearButton:disabled {
       opacity: .5;
-    }
-    #createListButton {
-      border: 1px solid black;
-      border-radius: 4px;
-      color: black;
     }
     
     body:not(.loaded) #listEntries { pointer-events: none; opacity: .5; }
@@ -112,10 +114,12 @@
 <body>
   <div id="app">
     <div id="header">
-      <select id="listSelect"></select>
+      <div class="">
+        <select id="listSelect"></select>
+        <button id="deleteListButton">✗</button>
+      </div>
       <div class="actions">
-        <button id="deleteListButton">Delete</button>
-        <button id="createListButton">Create</button>
+        <button id="createListButton">Create List</button>
       </div>
     </div>
     <div id="listEntries"></div>
@@ -216,15 +220,17 @@
           }
         });
         const del = document.createElement("button");
-        del.innerText = "x";
+        del.innerText = "✗";
         del.className = "delete";
         del.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          entries.splice(index, 1);
-          updateRecord(db, list.id, { entries });
-          autoFocusEntryIndex = index;
-          render();
+          if (e.button == 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            entries.splice(index, 1);
+            updateRecord(db, list.id, { entries });
+            autoFocusEntryIndex = index;
+            render();
+          }
         });
         el.append(check, text, del);
         listEntries.append(el);
@@ -290,7 +296,7 @@
       e.preventDefault();
       e.stopPropagation();
       const list = lists.find((l) => l.id == listSelect.value);
-      let confirmation = confirm(`Deleting list`);
+      let confirmation = confirm(`Delete list?`);
       if (confirmation) {
         deleteRecord(db, list.id);
         loadLists(null);
