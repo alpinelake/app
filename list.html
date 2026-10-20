@@ -72,7 +72,7 @@
       opacity: .5;
     }
     
-    body:not(.loaded) #listEntries { pointer-events: none; opacity: .5; }
+    body:not(.loaded) #listEntries { display: none; }
     body:not(.loaded) #footer { display: none; }
 
     #listEntries {
@@ -108,8 +108,11 @@
       color: var(--highlight);
       margin: 0 5px;
       font-size: 1.2rem;
+      visibility: hidden;
     }
-    #listEntries:not(.focused) button.delete { visibility: hidden; }
+    #listEntries:not(.focused) button.delete {
+      visibility: hidden;
+    }
 
     #footer { display: flex; padding: 10px 20px; font-size: .9em; }
     #clear { display: flex; gap: 10px; }
@@ -293,7 +296,7 @@
         }
         listSelect.append(el);
       });
-      listSelect.value = foundId || "";
+      listSelect.value = foundId || lists[0]?.id;
     });
 
     deleteListButton.addEventListener('click', (e) => {
