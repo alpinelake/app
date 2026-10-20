@@ -10,9 +10,7 @@
     :root {
       --background: hsl(224, 20%, 10%);
       --background-light: hsl(224, 20%, 20%);
-      --background-light-contrast: #85ace7;
-      --dark: #0f3460;
-      --highlight: #e94560;
+      --highlight: #85ace7;
       --light: #f9f9f9;
     }
     html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -65,7 +63,7 @@
     #createListButton {
       background: none;
       border: none;
-      color: var(--background-light-contrast);
+      color: var(--highlight);
     }
     #deleteListButton:disabled {
       visibility: hidden;
@@ -104,7 +102,13 @@
     }
     .entry textarea { flex: 1; border: none; outline: none; margin: 5px; overflow: hidden; background: none; color: inherit; }
     .entry.checked textarea { text-decoration: line-through; }
-    .entry button.delete { background: none; border: none; color: var(--highlight); margin: 0 5px; font-size: 1.2rem; }
+    .entry button.delete {
+      background: none;
+      border: none;
+      color: var(--highlight);
+      margin: 0 5px;
+      font-size: 1.2rem;
+    }
     #listEntries:not(.focused) button.delete { visibility: hidden; }
 
     #footer { display: flex; padding: 10px 20px; font-size: .9em; }
