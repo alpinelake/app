@@ -105,9 +105,6 @@
       opacity: .3;
     }
     .entry textarea { flex: 1; border: none; outline: none; margin: 5px; overflow: hidden; background: none; color: inherit; }
-    /*
-    .entry.checked textarea { text-decoration: line-through; }
-    */
     .entry button.delete {
       background: none;
       border: none;
@@ -160,8 +157,7 @@
     const urlKey = "id";
     let db = null;
     let lists = null;
-    let autoFocusPlaceholder = false;
-    let autoFocusEntryIndex = null;
+    let autoFocusIndex = null;
 
     function render(id) {
       renderListOptions(lists, id || listSelect.value);
@@ -169,12 +165,9 @@
       document.body.classList.toggle('loaded', !!list);
       renderList(list);
       deleteListButton.disabled = !list;
-      if (autoFocusPlaceholder) {
-        listEntries.querySelector(`.placeholder textarea`).focus();
-        autoFocusPlaceholder = false;
-      } else if (autoFocusEntryIndex != null) {
-        listEntries.querySelector(`[data-idx="${autoFocusEntryIndex}"] textarea`).focus();
-        autoFocusEntryIndex = null;
+      if (autoFocusIndex != null) {
+        listEntries.querySelector(`[data-idx="${autoFocusIndex}"] textarea`).focus();
+        autoFocusIndex = null;
       }
 
       //if (listSelect.value) {
@@ -186,6 +179,50 @@
 
     const ItemStatus = {
       Checked: 1
+    };
+
+    onTextKeydown = function(e, list, idx) {
+      const repeats = 2;
+      const entries = list.entries;
+      let start;
+      switch (e.keyCode) {
+        case 13: // Enter key inserts a line
+          e.stopPropagation();
+          e.preventDefault();
+          start = e.target.selectionStart;
+          if (start != null) {
+            const text0 = e.target.value.substring(0, start);
+            const text1 = e.target.value.substring(start);
+            entries[idx].text = text0.trim();
+            entries.splice(idx+1, 0, { text: text1.trim() });
+            updateRecord(db, list.id, { entries });
+            autoFocusIndex = idx+1;
+            render();
+          }
+          break;
+        case 8:  // Backspace key deletes a line
+          start = e.target.selectionStart;
+          if (start === 0 && idx >= 1) {
+            if (start == 0) {
+              let bspace = parseInt(e.target.dataset.bspace ?? repeats);
+              if (bspace <= 0) {
+                // merge text if possible
+                if (idx > 1 && e.target.value.trim()) {
+                  entries[idx-1].text = entries[idx-1].text.trim() + ' ' + e.target.value.trim();
+                }
+                entries.splice(idx, 1);
+                render();
+              } else {
+                bspace -= 1;
+                e.target.dataset.bspace = bspace;
+              }
+              setTimeout(() => {
+                e.target.dataset.bspace = repeats;
+              }, 2000);
+            }
+          }
+          break;
+      }
     };
 
     const renderList = compose((list) => {
@@ -214,11 +251,7 @@
         el.dataset.original = entry.text;
         text.spellcheck = false;
         text.addEventListener('keydown', (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.stopPropagation();
-            text.blur();
-          }
+          onTextKeydown(e, list, index);
         });
         text.addEventListener('focus', (e) => {
           listEntries.classList.add('focused');
@@ -233,47 +266,10 @@
             updateRecord(db, list.id, { entries });
           }
         });
-        const del = document.createElement("button");
-        del.innerText = "✗";
-        del.className = "delete";
-        del.addEventListener('pointerdown', (e) => {
-          if (e.button == 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            entries.splice(index, 1);
-            updateRecord(db, list.id, { entries });
-            autoFocusEntryIndex = index;
-            render();
-          }
-        });
-        el.append(check, text, del);
+        el.append(check, text);
         listEntries.append(el);
         el.classList.toggle('checked', entry.status == ItemStatus.Checked);
       });
-      const placeholder = document.createElement("div");
-      placeholder.className = "entry placeholder";
-      const check = document.createElement("input");
-      check.type = "checkbox";
-      check.disabled = true;
-      const text = document.createElement("textarea");
-      text.addEventListener('focus', (e) => {
-        listEntries.classList.add('focused');
-      });
-      text.addEventListener('blur', (e) => {
-        listEntries.classList.remove('focused');
-      });
-      text.addEventListener('keydown', (e) => {
-        if (list && e.key === "Enter") {
-          e.preventDefault();
-          e.stopPropagation();
-          entries.push({ text: e.currentTarget.value });
-          autoFocusPlaceholder = true;
-          updateRecord(db, list.id, { entries });
-          render();
-        }
-      });
-      placeholder.append(check, text);
-      listEntries.append(placeholder);
 
       clearHint.innerText = `${checkedCount}/${entries.length} checked`;
       clearButton.disabled = checkedCount == 0;
@@ -343,7 +339,7 @@
     async function createList(name) {
       addRecord(db, {
         name,
-        entries: [],
+        entries: [{text:''}],
         createdAt: Date.now()
       }).then((id) => {
         loadLists(id);
