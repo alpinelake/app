@@ -15,7 +15,7 @@
     }
     html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
     input, button, select { font-size: inherit; font-family: inherit; margin: 0; }
-    button { user-select: none; }
+    button { user-select: none; margin: 0; padding: 0; }
     textarea { font-family: inherit; font-size: inherit; resize: none; field-sizing: content; }
     body {
       font-family: sans-serif;
@@ -41,6 +41,14 @@
       background: var(--background-light);
       color: var(--light);
     }
+    #header .listField {
+      display: flex;
+      gap: 5px;
+    }
+    #header .listActions {
+      font-size: .9em;
+      align-self: center;
+    }
     #listSelect {
       field-sizing: content;
       padding: 20px 0;
@@ -49,10 +57,6 @@
       background: none;
       color: inherit;
       min-width: 50px;
-    }
-    #header .actions {
-      font-size: .9em;
-      align-self: center;
     }
 
     #deleteListButton {
@@ -101,7 +105,9 @@
       opacity: .3;
     }
     .entry textarea { flex: 1; border: none; outline: none; margin: 5px; overflow: hidden; background: none; color: inherit; }
+    /*
     .entry.checked textarea { text-decoration: line-through; }
+    */
     .entry button.delete {
       background: none;
       border: none;
@@ -114,18 +120,18 @@
       visibility: hidden;
     }
 
-    #footer { display: flex; padding: 10px 20px; font-size: .9em; }
+    #footer { display: flex; padding: 10px 20px; font-size: .9em; justify-content: end; }
     #clear { display: flex; gap: 10px; }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="header">
-      <div class="">
+      <div class="listField">
         <select id="listSelect"></select>
         <button id="deleteListButton">✗</button>
       </div>
-      <div class="actions">
+      <div class="listActions">
         <button id="createListButton">Create List</button>
       </div>
     </div>
@@ -211,6 +217,7 @@
           if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
+            text.blur();
           }
         });
         text.addEventListener('focus', (e) => {
@@ -268,7 +275,7 @@
       placeholder.append(check, text);
       listEntries.append(placeholder);
 
-      clearHint.innerText = `${checkedCount}/${entries.length} marked done`;
+      clearHint.innerText = `${checkedCount}/${entries.length} checked`;
       clearButton.disabled = checkedCount == 0;
     });
 
