@@ -322,10 +322,13 @@
 
     clearButton.addEventListener('click', (e) => {
       const list = lists.find((l) => l.id == listSelect.value);
-      list.entries = list.entries.filter((entry) => entry.status != ItemStatus.Checked);
-      updateRecord(db, list.id, list).then(() => {
-        render();
-      });
+      const unchecked = list.entries.filter((entry) => entry.status != ItemStatus.Checked);
+      if (confirm(`Clear checked items?`)) {
+        list.entries = unchecked;
+        updateRecord(db, list.id, list).then(() => {
+          render();
+        });
+      }
     });
 
     async function loadLists(id) {
