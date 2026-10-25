@@ -43,7 +43,7 @@
     }
     #header .listField {
       display: flex;
-      gap: 5px;
+      gap: 10px;
     }
     #header .listActions {
       font-size: .9em;
@@ -63,8 +63,7 @@
       font-size: 1.2em;
     }
     #clearButton,
-    #deleteListButton,
-    #createListButton {
+    #deleteListButton {
       background: none;
       border: none;
       color: var(--highlight);
@@ -72,12 +71,14 @@
     #deleteListButton:disabled {
       visibility: hidden;
     }
+    #clearButton {
+      font-variant: all-petite-caps;
+    }
     #clearButton:disabled {
       opacity: .5;
     }
     
     body:not(.loaded) #listEntries { display: none; }
-    body:not(.loaded) #footer { display: none; }
 
     #listEntries {
       display: flex;
@@ -104,7 +105,15 @@
     .entry input[type="checkbox"]:disabled {
       opacity: .3;
     }
-    .entry textarea { flex: 1; border: none; outline: none; margin: 5px; overflow: hidden; background: none; color: inherit; }
+    .entry textarea {
+      border: none;
+      outline: none;
+      margin: 5px;
+      overflow: hidden;
+      background: none;
+      color: inherit;
+      min-width: 40px;
+    }
     .entry button.delete {
       background: none;
       border: none;
@@ -117,8 +126,6 @@
       visibility: hidden;
     }
 
-    #footer { display: flex; padding: 10px 20px; font-size: .9em; justify-content: end; }
-    #clear { display: flex; gap: 10px; }
   </style>
 </head>
 <body>
@@ -129,16 +136,10 @@
         <button id="deleteListButton">✗</button>
       </div>
       <div class="listActions">
-        <button id="createListButton">Create List</button>
-      </div>
-    </div>
-    <div id="listEntries"></div>
-    <div id="footer">
-      <div id="clear">
-        <div id="clearHint"></div>
         <button id="clearButton">Clear</button>
       </div>
     </div>
+    <div id="listEntries"></div>
   </div>
 
   <script>
@@ -248,6 +249,9 @@
         }
         const text = document.createElement("textarea");
         text.value = entry.text;
+        if (entries.length == 1 && !text.value) {
+          text.placeholder = "Starting item...";
+        }
         el.dataset.original = entry.text;
         text.spellcheck = false;
         text.addEventListener('keydown', (e) => {
@@ -271,22 +275,35 @@
         el.classList.toggle('checked', entry.status == ItemStatus.Checked);
       });
 
-      clearHint.innerText = `${checkedCount}/${entries.length} checked`;
       clearButton.disabled = checkedCount == 0;
     });
 
-    listSelect.addEventListener('change', (event) => {
-      render();
+    listSelect.addEventListener('change', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (listSelect.value == "create") {
+        let name = prompt(`Name`);
+        if (name) {
+          createList(name);
+        }
+      } else {
+        render();
+      }
     });
 
     const renderListOptions = compose((lists, selectId) => {
       listSelect.replaceChildren();
 
+      const hint = document.createElement("option");
+      hint.value = ""; 
+      hint.disabled = true; 
+      hint.hidden = true; 
+      hint.innerText = "Select list...";
+      listSelect.append(hint);
+
       const placeholder = document.createElement("option");
-      placeholder.value = ""; 
-      placeholder.disabled = true; 
-      placeholder.hidden = true; 
-      placeholder.innerText = "Select list...";
+      placeholder.value = "create"; 
+      placeholder.innerText = "Add list...";
       listSelect.append(placeholder);
 
       let foundId = null;
@@ -299,6 +316,7 @@
         }
         listSelect.append(el);
       });
+
       listSelect.value = foundId || lists[0]?.id;
     });
 
@@ -313,23 +331,24 @@
       }
     });
 
-    createListButton.addEventListener('click', (e) => {
-      let name = prompt(`Name`);
-      if (name) {
-        createList(name);
-      }
-    });
-
     clearButton.addEventListener('click', (e) => {
       const list = lists.find((l) => l.id == listSelect.value);
       const unchecked = list.entries.filter((entry) => entry.status != ItemStatus.Checked);
       if (confirm(`Clear checked items?`)) {
-        list.entries = unchecked;
+        if (unchecked.length > 0) {
+          list.entries = unchecked;
+        } else {
+          list.entries = blankList();
+        }
         updateRecord(db, list.id, list).then(() => {
           render();
         });
       }
     });
+
+    function blankList() {
+      return [{text:''}];
+    }
 
     async function loadLists(id) {
       db = await openDatabase(storeName);
@@ -342,7 +361,7 @@
     async function createList(name) {
       addRecord(db, {
         name,
-        entries: [{text:''}],
+        entries: blankList(),
         createdAt: Date.now()
       }).then((id) => {
         loadLists(id);
