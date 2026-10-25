@@ -282,9 +282,11 @@
       e.preventDefault();
       e.stopPropagation();
       if (listSelect.value == "create") {
-        let name = prompt(`Name`);
+        let name = prompt(`Name`).trim();
         if (name) {
           createList(name);
+        } else {
+          listSelect.value = "";
         }
       } else {
         render();
@@ -296,8 +298,8 @@
 
       const hint = document.createElement("option");
       hint.value = ""; 
-      hint.disabled = true; 
-      hint.hidden = true; 
+      hint.disabled = true;
+      hint.hidden = true;
       hint.innerText = "Select list...";
       listSelect.append(hint);
 
@@ -317,7 +319,11 @@
         listSelect.append(el);
       });
 
-      listSelect.value = foundId || lists[0]?.id;
+      if (lists.length == 0) {
+        listSelect.value = "";
+      } else {
+        listSelect.value = foundId || lists[0]?.id;
+      }
     });
 
     deleteListButton.addEventListener('click', (e) => {
