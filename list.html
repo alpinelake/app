@@ -187,7 +187,7 @@
       const entries = list.entries;
       let start;
       switch (e.keyCode) {
-        case 13: // Enter key inserts a line
+        case 13: // Enter key splits/inserts a line
           e.stopPropagation();
           e.preventDefault();
           start = e.target.selectionStart;
@@ -196,12 +196,16 @@
             const text1 = e.target.value.substring(start);
             entries[idx].text = text0.trim();
             entries.splice(idx+1, 0, { text: text1.trim() });
+            if (start == 0) {
+              entries[idx+1].status = entries[idx].status;
+              delete entries[idx].status;
+            }
             updateRecord(db, list.id, { entries });
             autoFocusIndex = idx+1;
             render();
           }
           break;
-        case 8:  // Backspace key deletes a line
+        case 8:  // Backspace key merges/deletes a line
           start = e.target.selectionStart;
           if (start === 0 && idx >= 1) {
             if (start == 0) {
