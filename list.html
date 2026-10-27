@@ -8,8 +8,8 @@
   <title>List</title>
   <style>
     :root {
-      --background: hsl(224, 20%, 10%);
-      --background-light: hsl(224, 20%, 20%);
+      --app: hsl(224, 20%, 10%);
+      --header: hsl(224, 20%, 20%);
       --highlight: #85ace7;
       --light: #f9f9f9;
     }
@@ -30,25 +30,31 @@
       flex-direction: column;
       width: min(100%, 500px);
       box-sizing: border-box;
-      background: var(--background);
+      background: var(--app);
       color: var(--light);
     }
     #header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 5px;
       padding: 0 20px;
-      background: var(--background-light);
+      background: var(--header);
       color: var(--light);
     }
     #header .listField {
       display: flex;
       gap: 10px;
+      user-select: none;
     }
-    #header .listActions {
-      font-size: .9em;
-      align-self: center;
-    }
+    #topnavIcon { font-size: 34px; display: flex; user-select: none; }
+    #topnav { display: flex; flex-direction: column; background: var(--header); font-size: .9em; font-family: Arial; }
+    #topnav > div { display: flex; padding: 8px 20px; justify-content: end; user-select: none; }
+    #topnav > div.disabled { opacity: .5; pointer-events: none; }
+    body:not(.nav) #topnav { display: none; }
+
+    #hideChecked { gap: 10px; align-items: center; }
+
     #listSelect {
       field-sizing: content;
       padding: 20px 0;
@@ -58,26 +64,8 @@
       color: inherit;
       min-width: 50px;
     }
+    #listSelect:disabled { opacity: .5; }
 
-    #deleteListButton {
-      font-size: 1.2em;
-    }
-    #clearButton,
-    #deleteListButton {
-      background: none;
-      border: none;
-      color: var(--highlight);
-    }
-    #deleteListButton:disabled {
-      visibility: hidden;
-    }
-    #clearButton {
-      font-variant: all-petite-caps;
-    }
-    #clearButton:disabled {
-      opacity: .5;
-    }
-    
     body:not(.loaded) #listEntries { display: none; }
 
     #listEntries {
@@ -89,8 +77,9 @@
       font-size: .9em;
     }
     .entry { display: flex; align-items: center; gap: 5px; }
+    body.autohide .entry.checked { display: none; }
     .entry.checked textarea { opacity: .5; }
-    .entry.placeholder textarea { border-bottom: 1px dashed var(--background-light); }
+    .entry.placeholder textarea { border-bottom: 1px dashed var(--header); }
     .entry input[type="checkbox"] {
       width: 14px;
       height: 14px;
@@ -100,7 +89,7 @@
     }
     .entry input[type="checkbox"]:checked {
       outline: 1px solid black;
-      background: var(--background-light);
+      background: var(--header);
     }
     .entry input[type="checkbox"]:disabled {
       opacity: .3;
@@ -122,10 +111,19 @@
       font-size: 1.2rem;
       visibility: hidden;
     }
-    #listEntries:not(.focused) button.delete {
-      visibility: hidden;
-    }
 
+
+    /* Toggle styles */
+
+    .switch { position: relative; width: 38px; height: 23px; align-self: center; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; }
+    input:checked + .slider { background-color: #2196F3; }
+    input:focus + .slider { box-shadow: 0 0 1px #2196F3; }
+    input:checked + .slider:before { transform: translateX(14px); }
+    .slider.round { border-radius: 12px; }
+    .slider.round:before { border-radius: 50%; }
   </style>
 </head>
 <body>
@@ -133,11 +131,20 @@
     <div id="header">
       <div class="listField">
         <select id="listSelect"></select>
-        <button id="deleteListButton">✗</button>
       </div>
-      <div class="listActions">
-        <button id="clearButton">Clear</button>
+      <div id="topnavIcon">≡</div>
+    </div>
+    <div id="topnav">
+      <div id="hideChecked">
+        <div>Hide Checked</div>
+        <label class="switch">
+          <input type="checkbox" id="hideCheckedToggle">
+          <span class="slider round"></span>
+        </label>
       </div>
+      <div id="addListButton">Add List...</div>
+      <div id="deleteListButton">Delete List...</div>
+      <div id="clearListButton">Clear Checked Items...</div>
     </div>
     <div id="listEntries"></div>
   </div>
@@ -159,23 +166,23 @@
     let db = null;
     let lists = null;
     let autoFocusIndex = null;
+    let autoHideChecked = hideCheckedToggle.checked;
 
     function render(id) {
       renderListOptions(lists, id || listSelect.value);
+      listSelect.disabled = lists.length == 0;
       const list = lists.find((l) => l.id == listSelect.value);
-      document.body.classList.toggle('loaded', !!list);
+      const checked = list?.entries.filter((entry) => entry.status == ItemStatus.Checked);
+      document.body.classList.toggle('loaded', list);
+      document.body.classList.toggle('autohide', autoHideChecked);
       renderList(list);
-      deleteListButton.disabled = !list;
+      hideChecked.classList.toggle('disabled', !list || list.entries.length <= 1);
+      clearListButton.classList.toggle('disabled', !list || checked?.length == 0);
+      deleteListButton.classList.toggle('disabled', !list);
       if (autoFocusIndex != null) {
         listEntries.querySelector(`[data-idx="${autoFocusIndex}"] textarea`).focus();
         autoFocusIndex = null;
       }
-
-      //if (listSelect.value) {
-      //  const url = new URL(window.location);
-      //  url.searchParams.set(urlKey, listSelect.value);
-      //  history.replaceState(null, '', url);
-      //}
     }
 
     const ItemStatus = {
@@ -233,12 +240,11 @@
     const renderList = compose((list) => {
       listEntries.replaceChildren();
       const entries = list?.entries || [];
-      let checkedCount = 0;
-
       entries.forEach((entry, index) => {
         const el = document.createElement("div");
         el.className = "entry";
         el.dataset.idx = index;
+        el.classList.toggle('checked', entry.status == ItemStatus.Checked);
         const check = document.createElement("input");
         check.type = "checkbox";
         check.checked = entry.status == ItemStatus.Checked;
@@ -248,9 +254,6 @@
             render();
           });
         });
-        if (entry.status == ItemStatus.Checked) {
-          checkedCount += 1;
-        }
         const text = document.createElement("textarea");
         text.value = entry.text;
         if (entries.length == 1 && !text.value) {
@@ -276,25 +279,18 @@
         });
         el.append(check, text);
         listEntries.append(el);
-        el.classList.toggle('checked', entry.status == ItemStatus.Checked);
       });
+    });
 
-      clearButton.disabled = checkedCount == 0;
+    hideCheckedToggle.addEventListener('change', (e) => {
+      autoHideChecked = hideCheckedToggle.checked;
+      render();
     });
 
     listSelect.addEventListener('change', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (listSelect.value == "create") {
-        let name = prompt(`Name`).trim();
-        if (name) {
-          createList(name);
-        } else {
-          listSelect.value = "";
-        }
-      } else {
-        render();
-      }
+      render();
     });
 
     const renderListOptions = compose((lists, selectId) => {
@@ -306,11 +302,6 @@
       hint.hidden = true;
       hint.innerText = "Select list...";
       listSelect.append(hint);
-
-      const placeholder = document.createElement("option");
-      placeholder.value = "create"; 
-      placeholder.innerText = "Add list...";
-      listSelect.append(placeholder);
 
       let foundId = null;
       lists.forEach((list, index) => {
@@ -330,21 +321,35 @@
       }
     });
 
+    addListButton.addEventListener('click', (e) => {
+      let name = prompt(`Name`)?.trim();
+      if (name) {
+        document.body.classList.toggle('nav', false);
+        createList(name);
+      }
+    });
+
     deleteListButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const list = lists.find((l) => l.id == listSelect.value);
       let confirmation = confirm(`Delete list?`);
       if (confirmation) {
+        document.body.classList.toggle('nav', false);
         deleteRecord(db, list.id);
         loadLists(null);
       }
     });
 
-    clearButton.addEventListener('click', (e) => {
+    topnavIcon.addEventListener('click', (e) => {
+      document.body.classList.toggle('nav');
+    });
+
+    clearListButton.addEventListener('click', (e) => {
       const list = lists.find((l) => l.id == listSelect.value);
       const unchecked = list.entries.filter((entry) => entry.status != ItemStatus.Checked);
       if (confirm(`Clear checked items?`)) {
+        document.body.classList.toggle('nav', false);
         if (unchecked.length > 0) {
           list.entries = unchecked;
         } else {
@@ -379,9 +384,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      //const searchParams = new URLSearchParams(window.location.search);
-      //const id = searchParams.get(urlKey);
-      //loadLists(id);
       loadLists();
     });
 
