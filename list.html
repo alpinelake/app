@@ -89,7 +89,7 @@
       text-decoration: underline;
     }
     body.loaded #listEntries { display: flex; }
-    body.autohide.checked #listStatus { display: flex; }
+    body.loaded #listStatus { display: flex; }
 
     .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
@@ -163,7 +163,7 @@
     <div id="listEntries"></div>
     <div id="listStatus">
       <div id="allHiddenText"></div>
-      <a id="allHiddenReveal">Show</a>
+      <a id="allHiddenReveal"></a>
     </div>
   </div>
 
@@ -195,6 +195,7 @@
       document.body.classList.toggle('loaded', !!list);
       document.body.classList.toggle('autohide', autoHideChecked);
       document.body.classList.toggle('checked', !!checked?.length);
+      allHiddenReveal.innerText = autoHideChecked ? 'Show' : 'Hide';
       if (list && checked) {
         allHiddenText.innerText = `${checked.length} checked ${checked.length == 1 ? 'entry' : 'entries'}`;
       }
@@ -387,7 +388,7 @@
     allHiddenReveal.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      autoHideChecked = false;
+      autoHideChecked = !autoHideChecked;
       render();
     });
 
