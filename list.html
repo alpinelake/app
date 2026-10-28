@@ -38,7 +38,7 @@
       justify-content: space-between;
       align-items: center;
       gap: 5px;
-      padding: 0 20px;
+      padding: 0 25px;
       background: var(--header);
       color: var(--light);
     }
@@ -49,10 +49,9 @@
     }
     #topnavIcon { font-size: 34px; display: flex; user-select: none; }
     #topnav { display: flex; flex-direction: column; background: var(--header); font-size: .9em; font-family: Arial; }
-    #topnav > div { display: flex; padding: 8px 20px; justify-content: end; user-select: none; }
+    #topnav > div { display: flex; padding: 8px 25px; justify-content: end; user-select: none; }
     #topnav > div.disabled { opacity: .5; pointer-events: none; }
     body:not(.nav) #topnav { display: none; }
-
     #hideChecked { gap: 10px; align-items: center; }
 
     #listSelect {
@@ -66,23 +65,39 @@
     }
     #listSelect:disabled { opacity: .5; }
 
-    body:not(.loaded) #listEntries { display: none; }
-
     #listEntries {
-      display: flex;
+      display: none;
       flex-direction: column;
       overflow: scroll;
-      padding: 10px 15px;
+      padding: 10px 20px;
       scrollbar-width: none;
       font-size: .9em;
+      gap: 5px;
     }
-    .entry { display: flex; align-items: center; gap: 5px; }
+    #listStatus {
+      display: none;
+      gap: 10px;
+      font-size: 16px;
+      padding: 0 25px;
+      user-select: none;
+    }
+    #allHiddenText {
+      color: #6b6877;
+    }
+    #allHiddenReveal {
+      color: var(--highlight);
+      text-decoration: underline;
+    }
+    body.loaded #listEntries { display: flex; }
+    body.autohide.allchecked #listStatus { display: flex; }
+
+    .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
     .entry.checked textarea { opacity: .5; }
     .entry.placeholder textarea { border-bottom: 1px dashed var(--header); }
     .entry input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       appearance: none;
       outline: 1px solid var(--light);
       background: none;
@@ -97,7 +112,6 @@
     .entry textarea {
       border: none;
       outline: none;
-      margin: 5px;
       overflow: hidden;
       background: none;
       color: inherit;
@@ -147,6 +161,10 @@
       <div id="clearListButton">Clear Checked Items...</div>
     </div>
     <div id="listEntries"></div>
+    <div id="listStatus">
+      <div id="allHiddenText"></div>
+      <a id="allHiddenReveal">Show</a>
+    </div>
   </div>
 
   <script>
@@ -169,14 +187,18 @@
     let autoHideChecked = hideCheckedToggle.checked;
 
     function render(id) {
+      hideCheckedToggle.checked = autoHideChecked;
       renderListOptions(lists, id || listSelect.value);
       listSelect.disabled = lists.length == 0;
       const list = lists.find((l) => l.id == listSelect.value);
       const checked = list?.entries.filter((entry) => entry.status == ItemStatus.Checked);
+      const allchecked = list && list.entries.length == checked.length;
       document.body.classList.toggle('loaded', list);
       document.body.classList.toggle('autohide', autoHideChecked);
+      document.body.classList.toggle('allchecked', allchecked);
+      allHiddenText.innerText = `${checked.length} checked ${checked.length == 1 ? 'entry' : 'entries'}`;
       renderList(list);
-      hideChecked.classList.toggle('disabled', !list || list.entries.length <= 1);
+      hideChecked.classList.toggle('disabled', !list || list.entries.length == 0);
       clearListButton.classList.toggle('disabled', !list || checked?.length == 0);
       deleteListButton.classList.toggle('disabled', !list);
       if (autoFocusIndex != null) {
@@ -257,7 +279,7 @@
         const text = document.createElement("textarea");
         text.value = entry.text;
         if (entries.length == 1 && !text.value) {
-          text.placeholder = "Starting item...";
+          text.placeholder = "Text...";
         }
         el.dataset.original = entry.text;
         text.spellcheck = false;
@@ -359,6 +381,13 @@
           render();
         });
       }
+    });
+
+    allHiddenReveal.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      autoHideChecked = false;
+      render();
     });
 
     function blankList() {
