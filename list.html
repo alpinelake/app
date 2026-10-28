@@ -69,7 +69,7 @@
       display: none;
       flex-direction: column;
       overflow: scroll;
-      padding: 10px 20px;
+      padding: 10px 18px;
       scrollbar-width: none;
       font-size: .9em;
       gap: 5px;
@@ -89,7 +89,7 @@
       text-decoration: underline;
     }
     body.loaded #listEntries { display: flex; }
-    body.autohide.allchecked #listStatus { display: flex; }
+    body.autohide.checked #listStatus { display: flex; }
 
     .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
@@ -192,11 +192,12 @@
       listSelect.disabled = lists.length == 0;
       const list = lists.find((l) => l.id == listSelect.value);
       const checked = list?.entries.filter((entry) => entry.status == ItemStatus.Checked);
-      const allchecked = list && list.entries.length == checked.length;
-      document.body.classList.toggle('loaded', list);
+      document.body.classList.toggle('loaded', !!list);
       document.body.classList.toggle('autohide', autoHideChecked);
-      document.body.classList.toggle('allchecked', allchecked);
-      allHiddenText.innerText = `${checked.length} checked ${checked.length == 1 ? 'entry' : 'entries'}`;
+      document.body.classList.toggle('checked', !!checked?.length);
+      if (list && checked) {
+        allHiddenText.innerText = `${checked.length} checked ${checked.length == 1 ? 'entry' : 'entries'}`;
+      }
       renderList(list);
       hideChecked.classList.toggle('disabled', !list || list.entries.length == 0);
       clearListButton.classList.toggle('disabled', !list || checked?.length == 0);
