@@ -78,7 +78,7 @@
       display: none;
       gap: 10px;
       font-size: 16px;
-      padding: 5px 25px;
+      padding: 10px 15px;
       user-select: none;
     }
     #allHiddenText {
@@ -89,7 +89,7 @@
       text-decoration: underline;
     }
     body.loaded #listEntries { display: flex; }
-    body.loaded #listStatus { display: flex; }
+    body.loaded.checked #listStatus { display: flex; }
 
     .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
