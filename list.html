@@ -69,16 +69,18 @@
       display: none;
       flex-direction: column;
       overflow: scroll;
-      padding: 10px 18px;
+      padding: 10px 20px 0 20px;
       scrollbar-width: none;
       font-size: .9em;
       gap: 5px;
+      margin-top: auto
     }
     #listStatus {
-      display: none;
+      display: flex;
+      visibility: hidden;
       gap: 10px;
       font-size: 16px;
-      padding: 10px 18px;
+      padding: 20px 18px;
       user-select: none;
     }
     #allHiddenText {
@@ -89,12 +91,11 @@
       text-decoration: underline;
     }
     body.loaded #listEntries { display: flex; }
-    body.loaded.checked #listStatus { display: flex; }
+    body.loaded.checked #listStatus { visibility: visible; }
 
     .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
     .entry.checked textarea { opacity: .5; }
-    .entry.placeholder textarea { border-bottom: 1px dashed var(--header); }
     .entry input[type="checkbox"] {
       width: 16px;
       height: 16px;
@@ -281,7 +282,7 @@
         const text = document.createElement("textarea");
         text.value = entry.text;
         if (entries.length == 1 && !text.value) {
-          text.placeholder = "Text...";
+          text.placeholder = "Starting item...";
         }
         el.dataset.original = entry.text;
         text.spellcheck = false;
