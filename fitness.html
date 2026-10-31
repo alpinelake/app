@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <link rel="icon" href="data:,">
+  <script src="/app/db.js"></script>
+  <title>Fitness</title>
+  <style>
+    :root {
+      --accent: #c54b3e;
+    }
+    html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
+    input, textarea, button, select { font-size: inherit; font-family: inherit; margin: 0; }
+    button { user-select: none; }
+    body {
+      font-family: sans-serif;
+      font-size: 1.2em;
+      justify-content: center;
+      background: lightgray;
+    }
+    #app {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: min(100%, 500px);
+      box-sizing: border-box;
+      background: white;
+      color: black;
+      overflow: scroll;
+    }
+    .record {
+      display: flex;
+      flex-direction: column;
+      font-size: .9em;
+      border-top: 1px solid transparent;
+      border-bottom: 1px solid transparent;
+    }
+    .record:nth-child(2n+1) { background: #f9f9f9; }
+    .record:nth-child(1 of .pinned) { border-top: 4px solid #D1D5E3; }
+    .record:nth-child(n of .pinned) { border-bottom: 4px solid #D1D5E3; }
+    .record > div { padding: 5px 20px; }
+    .record .idetails { display: flex; justify-content: space-between; }
+    .record .icontrols { display: flex; gap: 10px; justify-content: space-between; }
+    .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
+    .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
+    .record:not(.selected) .icontrols { display: none; }
+    .record:not(.selected):not(.blank) .title { display: none; }
+    .record:not(.selected):not(.blank) .desc { display: none; }
+    .record.blank .titleText { display: none; }
+    .record.blank .lastGroup { display: none; }
+    .record .titleText { padding-bottom: 0; }
+    .record.selected { color: orange; background: #fff9ef; border-top: 1px solid orange; }
+    .record.selected .icontrols { background: orange; border-top: 1px solid orange; color: white; }
+    .record.selected .lastGroup { display: none; }
+    .record.selected .titleText { display: none; }
+    .record .col1 { display: flex; flex-direction: column; }
+    .record .lastGroup { display: flex; gap: 10px; }
+    .record .lastInput { width: 25px; height: 25px; }
+    .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0 25px 0 0; }
+    body.hideinactive .record:not(.active) { display: none; }
+
+    #nav { display: flex; gap: 10px; padding: 10px 25px; user-select: none; justify-content: space-between; }
+    #nav a { font-size: 16px; color: #2e65b8; text-decoration: underline; }
+
+    /* Toggle */
+    .switch { position: relative; width: 32px; height: 18px; align-self: center; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 3px; background-color: white; }
+    input:checked + .slider { background-color: #8599E0; }
+    input:checked + .slider:before { transform: translateX(12px); }
+    .slider.round { border-radius: 12px; }
+    .slider.round:before { border-radius: 50%; }
+
+    #hideInactive { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+    .activeStatus { display: flex; gap: 5px; align-items: center; }
+    .pinnedStatus { display: flex; gap: 5px; align-items: center; }
+    .statusGroup { display: flex; gap: 10px; }    
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="nav">
+      <a id="addButton">Add Item</a>
+      <div id="hideInactive">
+        <label class="switch">
+          <input type="checkbox" id="hideInactiveToggle">
+          <span class="slider round"></span>
+        </label>
+        <div id="hideInactiveLabel">Hide Inactive</div>
+      </div>
+    </div>
+    <div id="container"></div>
+  </div>
+
+  <script>
+    function compose(func) {
+      let lastKey = null;
+      return function (...args) {
+        const key = JSON.stringify(args);
+        if (lastKey != key) {
+          func(...args);
+          lastKey = key;
+        }
+      };
+    }
+
+    function hoursAgo(d0) {
+      let d1 = new Date();
+      let diff = Math.abs(d1 - d0);
+      let hours = Math.floor(diff / (1000 * 60 * 60));
+      return hours;
+    }
+
+    const storeName = "fitnessDB";
+    const RecordState = { Inactive: 1, Active: 2 };
+    const RecordPinned = { Pinned: 1 };
+    let db = null;
+    let records = null;
+
+    function render(addedId) {
+      document.body.classList.toggle('hideinactive', hideInactiveToggle.checked);
+      renderFlatUi(records || [], hideInactiveToggle.checked);
+      if (addedId) {
+        const record = container.querySelector(`.record[data-id="${addedId}"]`);
+        const title = record.querySelector(`.title`);
+        toggleRecord(record, true);
+        title.focus();
+      }
+    }
+
+    function toggleRecord(r, set) {
+      container.querySelectorAll('.record').forEach((el) => {
+        if (el == r) {
+          if (set != undefined && set != null) {
+            el.classList.toggle('selected', set);
+          } else {
+            el.classList.toggle('selected', !r.classList.contains('selected'));
+          }
+        } else {
+          el.classList.toggle('selected', false);
+        }
+      });
+      document.body.classList.toggle('selected', document.querySelector('.record.selected'));
+    }
+
+    function saveRecord(recordEl) {
+      const id = parseInt(recordEl.dataset.id);
+      if (!id) return;
+      const updates = {};
+      recordEl.querySelectorAll('.field').forEach((field) => {
+        if (field.dataset.field) {
+          const current = field.value.trim();
+          const change = field.dataset.original.trim() !== current;
+          if (change) {
+            console.log(`${field.dataset.field} ${field.dataset.original} -> ${current}`);
+            field.dataset.original = current;
+            updates[field.dataset.field] = current;
+          }
+        }
+      });
+      if (Object.keys(updates).length) {
+        updateRecord(db, id, updates).then(() => {
+          loadRecords();
+        });
+      }
+    }
+
+    function buildRecordUi(data) {
+      const root = document.createElement("div");
+      root.classList.add('record');
+      root.dataset.id = data.id;
+
+      function onFieldKeydown(e) {
+        switch (e.keyCode) {
+          case 13: // Enter key ignored
+            e.stopPropagation();
+            e.preventDefault();
+        }
+      }
+
+      const idetails = document.createElement("div");
+      idetails.className = "idetails";
+      const icontrols = document.createElement("div");
+      icontrols.className = "icontrols";
+
+      const col1 = document.createElement("div");
+      const col2 = document.createElement("div");
+      col1.className = "col1";
+      col2.className = "col2";
+      const title = document.createElement("textarea");
+      title.className = "field title";
+      title.dataset.field = "title";
+      title.placeholder = "Title";
+      title.addEventListener("keydown", onFieldKeydown);
+      title.value = data.title || "";
+      title.dataset.original = title.value;
+      const text = document.createElement("textarea");
+      text.className = "field text";
+      text.dataset.field = "text";
+      text.placeholder = "Comment";
+      text.addEventListener("keydown", onFieldKeydown);
+      text.value = data.text || "";
+      text.dataset.original = text.value;
+      const desc = document.createElement("textarea");
+      desc.className = "field desc";
+      desc.dataset.field = "desc";
+      desc.placeholder = "Description";
+      desc.addEventListener("keydown", onFieldKeydown);
+      desc.value = data.desc || "";
+      desc.dataset.original = desc.value;
+      desc.spellcheck = false;
+      const reps = document.createElement("textarea");
+      reps.className = "field reps";
+      reps.dataset.field = "reps";
+      reps.placeholder = "Sets/reps";
+      reps.addEventListener("keydown", onFieldKeydown);
+      reps.value = data.reps || "";
+      reps.dataset.original = reps.value;
+
+      const titleText = document.createElement("div");
+      titleText.className = "titleText";
+      if (data.title) {
+        if (data.desc) {
+          titleText.innerText = `${data.title} | ${data.desc}`;
+        } else {
+          titleText.innerText = data.title;
+        }
+      } else {
+        titleText.innerText = data.desc || "";
+      }
+
+      const lastGroup = document.createElement("div");
+      lastGroup.className = "lastGroup";
+      const lastLabel = document.createElement("div");
+      lastLabel.className = "lastLabel";
+      if (data.last) {
+        let hours = hoursAgo(data.last);
+        let days = Math.floor(hours/24);
+        if (days > 30) {
+          lastLabel.innerText = data.last.toLocaleDateString();
+        } else if (hours < 4) {
+          lastLabel.innerText = 'Now';
+        } else if (hours <= 24) {
+          lastLabel.innerText = 'Past day';
+        } else if (hours < 48) {
+          lastLabel.innerText = 'Yesterday';
+        } else {
+          lastLabel.innerText = `${days} days ago`;
+        }
+      } else {
+        lastLabel.innerText = ""
+      }
+      const lastInput = document.createElement("input");
+      lastInput.className = "lastInput";
+      lastInput.type = "checkbox";
+      lastInput.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+      lastInput.addEventListener("change", (e) => {
+        e.stopPropagation();
+        if (lastInput.checked) {
+          lastLabel.innerText = "";
+          const updates = {
+            last: Date.now()
+          };
+          updateRecord(db, data.id, updates).then(() => {
+            setTimeout(() => {
+              loadRecords();
+            }, 200);
+          });
+        }
+      });
+      lastGroup.append(lastLabel, lastInput);
+
+      const delGroup = document.createElement("div");
+      delGroup.className = "delGroup";
+      const delButton = document.createElement("button");
+      delButton.className = "delButton";
+      delButton.innerText = "Delete";
+      delButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        let approved = confirm(`Delete item?`);
+        if (approved) {
+          deleteRecord(db, data.id).then(() => {
+            toggleRecord(null, false);
+            loadRecords();
+          });
+        }
+      });
+      delGroup.append(delButton);
+
+
+      const active = !data.state || data.state == RecordState.Active;
+      const activeStatus = document.createElement("div");
+      activeStatus.className = "activeStatus";
+      const activeInput = document.createElement("input");
+      activeInput.className = "active";
+      activeInput.checked = active;
+      activeInput.type = "checkbox";
+      const activeLabel = document.createElement("label");
+      activeLabel.innerText = "Active";
+      activeStatus.append(activeInput, activeLabel);
+      activeInput.addEventListener("change", (e) => {
+        const updates = {
+          state: activeInput.checked ? data.state == RecordState.Active : RecordState.Inactive
+        };
+        updateRecord(db, data.id, updates).then(() => {
+          loadRecords();
+        });
+      });
+
+      const pinned = data.pin == RecordPinned.Pinned;
+      const pinnedStatus = document.createElement("div");
+      pinnedStatus.className = "pinnedStatus";
+      const pinnedInput = document.createElement("input");
+      pinnedInput.className = "pinned";
+      pinnedInput.checked = pinned;
+      pinnedInput.type = "checkbox";
+      const pinnedLabel = document.createElement("label");
+      pinnedLabel.innerText = "Pinned";
+      pinnedStatus.append(pinnedInput, pinnedLabel);
+      pinnedInput.addEventListener("change", (e) => {
+        const updates = {
+          pin: pinnedInput.checked ? RecordPinned.Pinned : null
+        };
+        updateRecord(db, data.id, updates).then(() => {
+          loadRecords();
+        });
+      });
+
+      const statusGroup = document.createElement("div");
+      statusGroup.className = "statusGroup";
+      statusGroup.append(activeStatus, pinnedStatus);
+
+      col1.append(title, desc, reps, text);
+      col2.append(lastGroup);
+      idetails.append(col1, col2);
+      icontrols.append(statusGroup, delGroup);
+      root.append(titleText, idetails, icontrols);
+      root.classList.toggle('active', active);
+      root.classList.toggle('pinned', pinned);
+      root.classList.toggle('blank', !data.title);
+      return root;
+    }
+
+    const renderFlatUi = compose((data, hideInactive) => {
+      container.replaceChildren();
+      data.sort((a,b) => {
+        if (a.pin == b.pin) {
+          return a.last - b.last;
+        } else if (a.pin) {
+          return -1;
+        } else if (b.pin) {
+          return 1;
+        } else {
+          return a.last - b.last;
+        }
+      }).forEach((record, index) => {
+        if (!hideInactive || record.state == RecordState.Active || !record.state) {
+          const el = buildRecordUi(record);
+          container.append(el);
+        }
+      });
+    });
+
+    async function loadRecords(addedId) {
+      db = await openDatabase(storeName);
+      getAll(db).then((result) => {
+        records = result;
+        render(addedId);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadRecords();
+    });
+
+    hideInactiveToggle.addEventListener("change", (e) => {
+      render();
+    });
+    hideInactiveLabel.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideInactiveToggle.checked = !hideInactiveToggle.checked;
+      render();
+    });
+
+    addButton.addEventListener("click", (e) => {
+      addRecord(db, {
+        createdAt: Date.now()
+      }).then((id) => {
+        loadRecords(id);
+      });
+    });
+
+    document.body.addEventListener("click", (e) => {
+      const clicked = e.target.closest('.record');
+      const infield = e.target.closest('.col1');
+      const previous = document.querySelector('.record.selected');
+      if (previous && previous != clicked) {
+        saveRecord(previous);
+        toggleRecord(clicked);
+      } else if (clicked) {
+        if (clicked != previous || !infield) {
+          toggleRecord(clicked);
+        }
+      } else {
+        toggleRecord(null, false);
+      }
+    });
+
+  </script>
+
+</body>
+</html>
