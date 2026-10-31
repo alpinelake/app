@@ -13,7 +13,7 @@
       --highlight: #85ace7;
       --light: #f9f9f9;
     }
-    html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; }
+    html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; overscroll-behavior: contain; }
     input, button, select { font-size: inherit; font-family: inherit; margin: 0; }
     button { user-select: none; margin: 0; padding: 0; }
     textarea { font-family: inherit; font-size: inherit; resize: none; field-sizing: content; }
@@ -232,9 +232,10 @@
               entries[idx+1].status = entries[idx].status;
               delete entries[idx].status;
             }
-            updateRecord(db, list.id, { entries });
-            autoFocusIndex = idx+1;
-            render();
+            updateRecord(db, list.id, { entries }).then(() => {
+              autoFocusIndex = idx+1;
+              render();
+            });
           }
           break;
         case 8:  // Backspace key merges/deletes a line
@@ -361,8 +362,9 @@
       let confirmation = confirm(`Delete list?`);
       if (confirmation) {
         document.body.classList.toggle('nav', false);
-        deleteRecord(db, list.id);
-        loadLists(null);
+        deleteRecord(db, list.id).then(() => {
+          loadLists(null);
+        });
       }
     });
 
