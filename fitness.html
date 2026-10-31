@@ -59,6 +59,8 @@
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
+    .record.recent .lastGroup { color: #46bc46; }
+    .record.recent .lastInput { accent-color: #46bc46; }
     .record .col1 { display: flex; flex-direction: column; }
     .record .lastGroup { display: flex; gap: 10px; font-size: .9em; align-items: center; user-select: none; }
     .record .lastInput { width: 25px; height: 25px; }
@@ -230,15 +232,18 @@
       lastGroup.className = "lastGroup";
       const lastLabel = document.createElement("div");
       lastLabel.className = "lastLabel";
+      let recent = false;
       if (data.last) {
         let hours = hoursAgo(data.last);
         let days = Math.floor(hours/24);
         if (days > 30) {
           lastLabel.innerText = data.last.toLocaleDateString();
         } else if (hours < 4) {
-          lastLabel.innerText = 'Now';
+          lastLabel.innerText = 'Done';
+          recent = true;
         } else if (hours <= 24) {
           lastLabel.innerText = 'Past day';
+          recent = true;
         } else if (hours < 48) {
           lastLabel.innerText = 'Yesterday';
         } else {
@@ -250,6 +255,7 @@
       const lastInput = document.createElement("input");
       lastInput.className = "lastInput";
       lastInput.type = "checkbox";
+      lastInput.checked = recent;
       function checkDone() {
         lastInput.checked = true;
         lastLabel.innerText = "";
@@ -344,6 +350,7 @@
       root.append(ihead, idetails, icontrols);
       root.classList.toggle('active', active);
       root.classList.toggle('pinned', pinned);
+      root.classList.toggle('recent', recent);
       root.classList.toggle('blank', !data.title);
       return root;
     }
