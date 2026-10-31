@@ -37,14 +37,15 @@
       border-bottom: 1px solid transparent;
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
-    .record:nth-child(1 of .pinned) { border-top: 4px solid #D1D5E3; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 4px solid #D1D5E3; }
-    .record > div { padding: 0px 20px; }
+    .record > div { padding: 0px 15px; }
     .record .ihead { padding-top: 5px; }
-    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 5px; font-size: .9em; }
+    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 5px; }
     .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
+    .record:not(.selected):not(.blank) .field:placeholder-shown { display: none; }
+    .record:not(.selected):not(.blank) .idetails { color: #777; font-size: 16px; }
     .record:not(.selected) .icontrols { display: none; }
     .record:not(.selected):not(.blank) .title { display: none; }
     .record:not(.selected):not(.blank) .desc { display: none; }
@@ -59,7 +60,7 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record .col1 { display: flex; flex-direction: column; }
-    .record .lastGroup { display: flex; gap: 10px; font-size: .9em; align-items: center; }
+    .record .lastGroup { display: flex; gap: 10px; font-size: .9em; align-items: center; user-select: none; }
     .record .lastInput { width: 25px; height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record:not(.active) { display: none; }
@@ -249,22 +250,29 @@
       const lastInput = document.createElement("input");
       lastInput.className = "lastInput";
       lastInput.type = "checkbox";
-      lastInput.addEventListener("click", (e) => {
+      function checkDone() {
+        lastInput.checked = true;
+        lastLabel.innerText = "";
+        const updates = {
+          last: Date.now()
+        };
+        updateRecord(db, data.id, updates).then(() => {
+          setTimeout(() => {
+            loadRecords();
+          }, 200);
+        });
+      }
+
+      lastLabel.addEventListener("click", (e) => {
         e.stopPropagation();
+        checkDone();
       });
       lastInput.addEventListener("change", (e) => {
         e.stopPropagation();
-        if (lastInput.checked) {
-          lastLabel.innerText = "";
-          const updates = {
-            last: Date.now()
-          };
-          updateRecord(db, data.id, updates).then(() => {
-            setTimeout(() => {
-              loadRecords();
-            }, 200);
-          });
-        }
+        checkDone();
+      });
+      lastInput.addEventListener("click", (e) => {
+        e.stopPropagation();
       });
       lastGroup.append(lastLabel, lastInput);
 
@@ -392,16 +400,19 @@
     document.body.addEventListener("click", (e) => {
       const clicked = e.target.closest('.record');
       const infield = e.target.closest('.field');
+      const controls = e.target.closest('.lastGroup');
       const previous = document.querySelector('.record.selected');
       if (previous) {
         if (previous != clicked || !infield) {
           saveRecord(previous);
           toggleRecord(clicked);
         }
-      } else if (clicked) {
-        toggleRecord(clicked);
-      } else {
-        toggleRecord(null, false);
+      } else if (!controls) {
+        if (clicked) {
+          toggleRecord(clicked);
+        } else {
+          toggleRecord(null, false);
+        }
       }
     });
 
