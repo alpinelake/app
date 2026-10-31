@@ -38,26 +38,30 @@
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
     .record:nth-child(1 of .pinned) { border-top: 4px solid #D1D5E3; }
-    .record:nth-child(n of .pinned) { border-bottom: 4px solid #D1D5E3; }
-    .record > div { padding: 5px 20px; }
-    .record .idetails { display: flex; justify-content: space-between; }
-    .record .icontrols { display: flex; gap: 10px; justify-content: space-between; }
+    .record:nth-last-child(1 of .pinned) { border-bottom: 4px solid #D1D5E3; }
+    .record > div { padding: 0px 20px; }
+    .record .ihead { padding-top: 5px; }
+    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 5px; }
+    .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
     .record:not(.selected) .icontrols { display: none; }
     .record:not(.selected):not(.blank) .title { display: none; }
     .record:not(.selected):not(.blank) .desc { display: none; }
+    .record:not(.selected) .field { pointer-events: none; }
     .record.blank .titleText { display: none; }
+    .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
     .record .titleText { padding-bottom: 0; }
     .record.selected { color: orange; background: #fff9ef; border-top: 1px solid orange; }
     .record.selected .icontrols { background: orange; border-top: 1px solid orange; color: white; }
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
+    .record.selected .descText { display: none; }
     .record .col1 { display: flex; flex-direction: column; }
     .record .lastGroup { display: flex; gap: 10px; }
     .record .lastInput { width: 25px; height: 25px; }
-    .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0 25px 0 0; }
+    .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record:not(.active) { display: none; }
 
     #nav { display: flex; gap: 10px; padding: 10px 25px; user-select: none; justify-content: space-between; }
@@ -180,6 +184,8 @@
         }
       }
 
+      const ihead = document.createElement("div");
+      ihead.className = "ihead";
       const idetails = document.createElement("div");
       idetails.className = "idetails";
       const icontrols = document.createElement("div");
@@ -196,13 +202,6 @@
       title.addEventListener("keydown", onFieldKeydown);
       title.value = data.title || "";
       title.dataset.original = title.value;
-      const text = document.createElement("textarea");
-      text.className = "field text";
-      text.dataset.field = "text";
-      text.placeholder = "Comment";
-      text.addEventListener("keydown", onFieldKeydown);
-      text.value = data.text || "";
-      text.dataset.original = text.value;
       const desc = document.createElement("textarea");
       desc.className = "field desc";
       desc.dataset.field = "desc";
@@ -221,15 +220,10 @@
 
       const titleText = document.createElement("div");
       titleText.className = "titleText";
-      if (data.title) {
-        if (data.desc) {
-          titleText.innerText = `${data.title} | ${data.desc}`;
-        } else {
-          titleText.innerText = data.title;
-        }
-      } else {
-        titleText.innerText = data.desc || "";
-      }
+      titleText.innerText = data.title || "";
+      const descText = document.createElement("div");
+      descText.className = "descText";
+      descText.innerText = data.desc || "";
 
       const lastGroup = document.createElement("div");
       lastGroup.className = "lastGroup";
@@ -334,11 +328,12 @@
       statusGroup.className = "statusGroup";
       statusGroup.append(activeStatus, pinnedStatus);
 
-      col1.append(title, desc, reps, text);
+      col1.append(descText, desc, reps);
       col2.append(lastGroup);
+      ihead.append(titleText, title);
       idetails.append(col1, col2);
       icontrols.append(statusGroup, delGroup);
-      root.append(titleText, idetails, icontrols);
+      root.append(ihead, idetails, icontrols);
       root.classList.toggle('active', active);
       root.classList.toggle('pinned', pinned);
       root.classList.toggle('blank', !data.title);
@@ -396,15 +391,15 @@
 
     document.body.addEventListener("click", (e) => {
       const clicked = e.target.closest('.record');
-      const infield = e.target.closest('.col1');
+      const infield = e.target.closest('.field');
       const previous = document.querySelector('.record.selected');
-      if (previous && previous != clicked) {
-        saveRecord(previous);
-        toggleRecord(clicked);
-      } else if (clicked) {
-        if (clicked != previous || !infield) {
+      if (previous) {
+        if (previous != clicked || !infield) {
+          saveRecord(previous);
           toggleRecord(clicked);
         }
+      } else if (clicked) {
+        toggleRecord(clicked);
       } else {
         toggleRecord(null, false);
       }
