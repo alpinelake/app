@@ -15,7 +15,6 @@
     button { user-select: none; }
     body {
       font-family: sans-serif;
-      font-size: 1.2em;
       justify-content: center;
       background: lightgray;
     }
@@ -27,25 +26,22 @@
       box-sizing: border-box;
       background: white;
       color: black;
-      overflow: scroll;
+      overflow: hidden;
     }
+    #container { overflow: scroll; }
     .record {
       display: flex;
       flex-direction: column;
-      font-size: .9em;
-      border-top: 1px solid transparent;
-      border-bottom: 1px solid transparent;
+      font-size: 16px;
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
-    .record:nth-last-child(1 of .pinned) { border-bottom: 1px solid lightgray; }
-    .record > div { padding: 0px 15px; }
-    .record .ihead { padding-top: 5px; }
-    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 5px; }
+    .record > div { padding: 0px 15px 0 10px; }
+    .record .ihead { padding-top: 7px; }
+    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 10px; }
     .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
     .record:not(.selected):not(.blank) .field:placeholder-shown { display: none; }
-    .record:not(.selected):not(.blank) .idetails { color: #777; font-size: 16px; }
     .record:not(.selected) .icontrols { display: none; }
     .record:not(.selected):not(.blank) .title { display: none; }
     .record:not(.selected):not(.blank) .desc { display: none; }
@@ -53,34 +49,35 @@
     .record.blank .titleText { display: none; }
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
-    .record .titleText { padding-bottom: 0; }
-    .record.selected { color: orange; background: #fff9ef; border-top: 1px solid orange; }
+    .record .titleText { padding-bottom: 0; font-size: 16px; }
+    .record.selected { color: orange; background: #fff9ef; }
+    .record.selected:not(:first-child) { border-top: 1px solid; }
     .record.selected .icontrols { background: orange; border-top: 1px solid orange; color: white; }
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
-    .record.recent .lastGroup { color: #46bc46; }
-    .record.recent .lastInput { accent-color: #46bc46; }
+    .record:not(.selected).active.recent { background: #46bc46; color: white; }
+    .record:not(.selected):not(.blank):not(.recent) .idetails { color: #777; }
+
     .record .col1 { display: flex; flex-direction: column; }
-    .record .lastGroup { display: flex; gap: 10px; font-size: .9em; align-items: center; user-select: none; }
-    .record .lastInput { width: 25px; height: 25px; }
+    .record .lastGroup { display: flex; gap: 10px; align-items: center; user-select: none; padding-right: 5px; }
+    .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record:not(.active) { display: none; }
 
-    #nav { display: flex; gap: 10px; padding: 10px 25px; user-select: none; justify-content: space-between; border-bottom: 1px solid lightgray; }
-    #nav a { font-size: 16px; color: #2e65b8; text-decoration: underline; }
+    #nav { display: flex; padding: 10px 15px; user-select: none; justify-content: space-between; align-items: center; font-size: 17px; height: 32px; border-bottom: 1px solid #8599E0; color: #5C77D6; }
 
     /* Toggle */
     .switch { position: relative; width: 32px; height: 18px; align-self: center; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; }
-    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 3px; background-color: white; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 13px; left: 3px; bottom: 3px; background-color: white; }
     input:checked + .slider { background-color: #8599E0; }
     input:checked + .slider:before { transform: translateX(12px); }
     .slider.round { border-radius: 12px; }
     .slider.round:before { border-radius: 50%; }
 
-    #hideInactive { display: flex; gap: 8px; align-items: center; font-size: 16px; }
+    #hideInactive { display: flex; gap: 8px; align-items: center; }
     .activeStatus { display: flex; gap: 5px; align-items: center; }
     .pinnedStatus { display: flex; gap: 5px; align-items: center; }
     .statusGroup { display: flex; gap: 10px; }    
@@ -181,9 +178,12 @@
 
       function onFieldKeydown(e) {
         switch (e.keyCode) {
-          case 13: // Enter key ignored
+          case 13: // Enter key saves record
             e.stopPropagation();
             e.preventDefault();
+            const record = e.target.closest('.record');
+            saveRecord(record);
+            toggleRecord(record, false);
         }
       }
 
@@ -239,11 +239,10 @@
         if (days > 30) {
           lastLabel.innerText = data.last.toLocaleDateString();
         } else if (hours < 4) {
-          lastLabel.innerText = 'Done';
+          lastLabel.innerText = '';
           recent = true;
         } else if (hours <= 24) {
           lastLabel.innerText = 'Past day';
-          recent = true;
         } else if (hours < 48) {
           lastLabel.innerText = 'Yesterday';
         } else {
@@ -265,7 +264,7 @@
         updateRecord(db, data.id, updates).then(() => {
           setTimeout(() => {
             loadRecords();
-          }, 200);
+          }, 150);
         });
       }
 
