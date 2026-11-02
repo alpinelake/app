@@ -39,7 +39,7 @@
     .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
     .record .idetails { display: flex; justify-content: space-between; padding-bottom: 10px; }
     .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
-    .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
+    .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
     .record:not(.selected):not(.blank) .field:placeholder-shown { display: none; }
     .record:not(.selected) .icontrols { display: none; }
@@ -175,6 +175,8 @@
       root.classList.add('record');
       root.dataset.id = data.id;
 
+      const pinned = data.pin == RecordPinned.Pinned;
+
       function onFieldKeydown(e) {
         switch (e.keyCode) {
           case 13: // Enter key saves record
@@ -223,6 +225,9 @@
       const titleText = document.createElement("div");
       titleText.className = "titleText";
       titleText.innerText = data.title || "";
+      if (pinned) {
+        titleText.innerText = "⭐ " + titleText.innerText;
+      }
       const descText = document.createElement("div");
       descText.className = "descText";
       descText.innerText = data.desc || "";
@@ -315,7 +320,6 @@
         });
       });
 
-      const pinned = data.pin == RecordPinned.Pinned;
       const pinnedStatus = document.createElement("div");
       pinnedStatus.className = "pinnedStatus";
       const pinnedInput = document.createElement("input");
@@ -338,12 +342,9 @@
       statusGroup.className = "statusGroup";
       statusGroup.append(activeStatus, pinnedStatus);
 
-      const statusIndicator = document.createElement("div");
-      statusIndicator.innerText = pinned ? "⭐" : "";
-
       col1.append(descText, desc, reps);
       col2.append(lastGroup);
-      ihead.append(statusIndicator, titleText, title);
+      ihead.append(titleText, title);
       idetails.append(col1, col2);
       icontrols.append(statusGroup, delGroup);
       root.append(ihead, idetails, icontrols);
