@@ -35,9 +35,8 @@
       font-size: 16px;
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
-    .record.active:nth-last-child(1 of .pinned) { border-bottom: 2px solid #8599E0; }
     .record > div { padding: 0px 15px 0 10px; }
-    .record .ihead { padding-top: 7px; }
+    .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
     .record .idetails { display: flex; justify-content: space-between; padding-bottom: 10px; }
     .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; }
@@ -51,9 +50,8 @@
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
     .record .titleText { padding-bottom: 0; font-size: 16px; }
-    .record.selected { color: orange; background: #fff9ef; }
-    .record.selected:not(:first-child) { border-top: 1px solid; }
-    .record.selected .icontrols { background: orange; border-top: 1px solid orange; color: white; }
+    .record.selected { color: orange; background: #fff9ef; border: 1px solid; }
+    .record.selected .icontrols { background: orange; color: white; }
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
@@ -66,7 +64,7 @@
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record:not(.active) { display: none; }
 
-    #nav { display: flex; padding: 10px 15px; user-select: none; justify-content: space-between; align-items: center; font-size: 17px; height: 32px; border-bottom: 1px solid #8599E0; color: #5C77D6; }
+    #nav { display: flex; padding: 10px 15px; user-select: none; justify-content: space-between; align-items: center; font-size: 17px; height: 32px; border-bottom: 1px solid #C7CAD4; color: #5C77D6; }
 
     /* Toggle */
     .switch { position: relative; width: 32px; height: 18px; align-self: center; }
@@ -342,9 +340,12 @@
       statusGroup.className = "statusGroup";
       statusGroup.append(activeStatus, pinnedStatus);
 
+      const statusIndicator = document.createElement("div");
+      statusIndicator.innerText = pinned ? "⭐" : "";
+
       col1.append(descText, desc, reps);
       col2.append(lastGroup);
-      ihead.append(titleText, title);
+      ihead.append(titleText, title, statusIndicator);
       idetails.append(col1, col2);
       icontrols.append(statusGroup, delGroup);
       root.append(ihead, idetails, icontrols);
