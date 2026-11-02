@@ -59,7 +59,7 @@
     .record:not(.selected):not(.blank):not(.recent) .idetails { color: #777; }
 
     .record .col1 { display: flex; flex-direction: column; }
-    .record .lastGroup { display: flex; gap: 10px; align-items: center; user-select: none; padding-right: 5px; text-align: right; line-height: 18px; }
+    .record .lastGroup { display: flex; gap: 7px; align-items: center; user-select: none; padding-right: 5px; text-align: right; line-height: 18px; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record:not(.active) { display: none; }
@@ -239,7 +239,7 @@
       let recent = false;
       if (data.last) {
         let hours = hoursAgo(data.last);
-        let days = Math.floor(hours/24);
+        let days = Math.ceil(hours/24);
         //lastLabel.innerText = data.last.toLocaleDateString();
         if (hours < 4) {
           lastLabel.innerText = '';
