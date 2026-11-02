@@ -35,7 +35,7 @@
       font-size: 16px;
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
-    .record > div { padding: 0px 15px 0 10px; }
+    .record > div { padding: 0px 15px 0 12px; }
     .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
     .record .idetails { display: flex; justify-content: space-between; padding-bottom: 10px; }
     .record .icontrols { display: flex; gap: 10px; justify-content: space-between; padding: 5px 20px; }
@@ -240,18 +240,15 @@
       if (data.last) {
         let hours = hoursAgo(data.last);
         let days = Math.floor(hours/24);
-        if (days > 30) {
-          lastLabel.innerText = data.last.toLocaleDateString();
-        } else if (hours < 4) {
+        //lastLabel.innerText = data.last.toLocaleDateString();
+        if (hours < 4) {
           lastLabel.innerText = '';
           recent = true;
-        } else if (hours <= 48) {
-          lastLabel.innerText = 'Past day';
         } else {
-          lastLabel.innerText = `${days} days ago`;
+          lastLabel.innerText = `${days}d`;
         }
       } else {
-        lastLabel.innerText = ""
+        lastLabel.innerText = "";
       }
       const lastInput = document.createElement("input");
       lastInput.className = "lastInput";
