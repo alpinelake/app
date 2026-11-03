@@ -37,7 +37,7 @@
     .record:nth-child(2n+1) { background: #f9f9f9; }
     .record > div { padding: 0px 15px 0 12px; }
     .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
-    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 10px; }
+    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 7px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
@@ -124,9 +124,9 @@
     let db = null;
     let records = null;
 
-    function render(addedId) {
+    function render(addedId, force) {
       document.body.classList.toggle('hideinactive', hideInactiveToggle.checked);
-      renderFlatUi(records || [], hideInactiveToggle.checked);
+      renderFlatUi(records || [], hideInactiveToggle.checked, force);
       if (addedId) {
         const record = container.querySelector(`.record[data-id="${addedId}"]`);
         const title = record.querySelector(`.title`);
@@ -241,11 +241,12 @@
       let recent = false;
       if (data.last) {
         let hours = hoursAgo(data.last);
-        let days = Math.ceil(hours/24);
-        //lastLabel.innerText = data.last.toLocaleDateString();
+        let days = Math.floor(hours/24);
         if (hours < 4) {
           lastLabel.innerText = '';
           recent = true;
+        } else if (hours < 24) {
+          lastLabel.innerText = `${hours}h`;
         } else {
           lastLabel.innerText = `${days}d`;
         }
@@ -354,7 +355,8 @@
       return root;
     }
 
-    const renderFlatUi = compose((data, hideInactive) => {
+    const renderFlatUi = compose((data, hideInactive, force) => {
+      if (force) console.log(`force render ${force}`);
       container.replaceChildren();
       data.sort((a,b) => {
         if (a.pin == b.pin) {
@@ -418,6 +420,21 @@
           toggleRecord(clicked);
         } else {
           toggleRecord(null, false);
+        }
+      }
+    });
+
+    let lastHidden = null;
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState == 'hidden') {
+        lastHidden = new Date();
+      } else if (document.visibilityState == 'visible') {
+        let diff = Math.abs(new Date() - lastHidden);
+        let minutes = Math.floor(diff / (1000 * 60));
+        if (minutes > 10) {
+          console.log(`page visibility hidden ${minutes} ago; rerender page`);
+          render(null, lastHidden);
         }
       }
     });
