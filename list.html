@@ -16,7 +16,7 @@
     html, body { display: flex; margin: 0; padding: 0; width: 100%; height: 100%; overscroll-behavior: contain; }
     input, button, select { font-size: inherit; font-family: inherit; margin: 0; }
     button { user-select: none; margin: 0; padding: 0; }
-    textarea { font-family: inherit; font-size: inherit; resize: none; field-sizing: content; }
+    input { font-family: inherit; font-size: inherit; field-sizing: content; }
     body {
       font-family: sans-serif;
       font-size: 1.2em;
@@ -70,19 +70,17 @@
       display: grid;
       grid-template-columns: 50% 50%;
     }
-    body.gridview #listEntries .entry textarea {
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
     #listEntries {
       display: flex;
       flex-direction: column;
       overflow: scroll;
-      padding: 10px 20px 0 20px;
+      padding: 10px 18px 0 18px;
       scrollbar-width: none;
       font-size: .9em;
       gap: 3px;
+      /*
       margin-top: auto
+      */
     }
     #listStatus {
       display: flex;
@@ -102,14 +100,14 @@
     body:not(.loaded) #listEntries { display: none; }
     body.loaded.checked #listStatus { visibility: visible; }
 
-    .entry { display: flex; align-items: center; gap: 10px; }
+    .entry { display: flex; align-items: center; gap: 8px; }
     body.autohide .entry.checked { display: none; }
-    .entry.checked textarea { opacity: .5; }
+    .entry.checked input { opacity: .5; }
     .entry input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      min-width: 18px;
-      min-height: 18px;
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
       appearance: none;
       outline: 1px solid var(--light);
       background: none;
@@ -121,14 +119,14 @@
     .entry input[type="checkbox"]:disabled {
       opacity: .3;
     }
-    .entry textarea {
+    .entry input {
       border: none;
       outline: none;
       overflow: hidden;
       background: none;
       color: inherit;
       min-width: 40px;
-      line-height: 20px;
+      text-overflow: ellipsis;
     }
     .entry button.delete {
       background: none;
@@ -139,9 +137,7 @@
       visibility: hidden;
     }
 
-
     /* Toggle styles */
-
     .switch { position: relative; width: 38px; height: 23px; align-self: center; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; }
@@ -220,7 +216,7 @@
       clearListButton.classList.toggle('disabled', !list || checked?.length == 0);
       deleteListButton.classList.toggle('disabled', !list);
       if (autoFocusIndex != null) {
-        listEntries.querySelector(`[data-idx="${autoFocusIndex}"] textarea`).focus();
+        listEntries.querySelector(`[data-idx="${autoFocusIndex}"] input`).focus();
         autoFocusIndex = null;
       }
     }
@@ -295,7 +291,7 @@
             render();
           });
         });
-        const text = document.createElement("textarea");
+        const text = document.createElement("input");
         text.value = entry.text;
         if (entries.length == 1 && !text.value) {
           text.placeholder = "Starting item...";
