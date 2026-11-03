@@ -57,7 +57,8 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
-    .record:not(.selected):not(.blank):not(.recent) .idetails { color: #777; }
+    .record:not(.selected):not(.inactive).lastdone { background: #8f8; color: green; }
+    .record:not(.selected):not(.blank):not(.recent):not(.lastdone) .idetails { color: #777; }
     .record:not(.selected).inactive { opacity: .5; }
 
     .record .col1 { display: flex; flex-direction: column; }
@@ -239,14 +240,16 @@
       const lastLabel = document.createElement("div");
       lastLabel.className = "lastLabel";
       let recent = false;
+      let lastdone = false;
       if (data.last) {
         let hours = hoursAgo(data.last);
         let days = Math.floor(hours/24);
-        if (hours < 4) {
+        if (hours < 3) {
           lastLabel.innerText = '';
           recent = true;
-        } else if (hours < 24) {
+        } else if (hours < 20) {
           lastLabel.innerText = `${hours}h`;
+          lastdone = true;
         } else {
           lastLabel.innerText = `${days}d`;
         }
@@ -351,6 +354,7 @@
       root.classList.toggle('inactive', !active);
       root.classList.toggle('pinned', pinned);
       root.classList.toggle('recent', recent);
+      root.classList.toggle('lastdone', lastdone);
       root.classList.toggle('blank', !data.title);
       return root;
     }
