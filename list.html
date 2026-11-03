@@ -47,11 +47,12 @@
       gap: 10px;
       user-select: none;
     }
-    #topnavIcon { font-size: 34px; display: flex; user-select: none; }
+    #topright { font-size: 34px; display: flex; user-select: none; gap: 15px; }
     #topnav { display: flex; flex-direction: column; background: var(--header); font-size: .9em; font-family: Arial; }
     #topnav > div { display: flex; padding: 8px 25px; justify-content: end; user-select: none; }
     #topnav > div.disabled { opacity: .5; pointer-events: none; }
     body:not(.nav) #topnav { display: none; }
+    body.gridview #topnavGridIcon { color: #2196F3; }
     #hideChecked { gap: 10px; align-items: center; }
 
     #listSelect {
@@ -65,14 +66,22 @@
     }
     #listSelect:disabled { opacity: .5; }
 
+    body.gridview #listEntries {
+      display: grid;
+      grid-template-columns: 50% 50%;
+    }
+    body.gridview #listEntries .entry textarea {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     #listEntries {
-      display: none;
+      display: flex;
       flex-direction: column;
       overflow: scroll;
       padding: 10px 20px 0 20px;
       scrollbar-width: none;
       font-size: .9em;
-      gap: 5px;
+      gap: 3px;
       margin-top: auto
     }
     #listStatus {
@@ -90,15 +99,17 @@
       color: var(--highlight);
       text-decoration: underline;
     }
-    body.loaded #listEntries { display: flex; }
+    body:not(.loaded) #listEntries { display: none; }
     body.loaded.checked #listStatus { visibility: visible; }
 
     .entry { display: flex; align-items: center; gap: 10px; }
     body.autohide .entry.checked { display: none; }
     .entry.checked textarea { opacity: .5; }
     .entry input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      min-height: 18px;
       appearance: none;
       outline: 1px solid var(--light);
       background: none;
@@ -117,6 +128,7 @@
       background: none;
       color: inherit;
       min-width: 40px;
+      line-height: 20px;
     }
     .entry button.delete {
       background: none;
@@ -147,7 +159,10 @@
       <div class="listField">
         <select id="listSelect"></select>
       </div>
-      <div id="topnavIcon">≡</div>
+      <div id="topright">
+        <div id="topnavGridIcon">⊞</div>
+        <div id="topnavIcon">≡</div>
+      </div>
     </div>
     <div id="topnav">
       <div id="hideChecked">
@@ -367,9 +382,13 @@
         });
       }
     });
+    
 
     topnavIcon.addEventListener('click', (e) => {
       document.body.classList.toggle('nav');
+    });
+    topnavGridIcon.addEventListener('click', (e) => {
+      document.body.classList.toggle('gridview');
     });
 
     clearListButton.addEventListener('click', (e) => {
