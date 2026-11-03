@@ -216,7 +216,7 @@
       clearListButton.classList.toggle('disabled', !list || checked?.length == 0);
       deleteListButton.classList.toggle('disabled', !list);
       if (autoFocusIndex != null) {
-        listEntries.querySelector(`[data-idx="${autoFocusIndex}"] input`).focus();
+        listEntries.querySelector(`[data-idx="${autoFocusIndex}"] input.text`).focus();
         autoFocusIndex = null;
       }
     }
@@ -255,12 +255,14 @@
             if (start == 0) {
               let bspace = parseInt(e.target.dataset.bspace ?? repeats);
               if (bspace <= 0) {
-                // merge text if possible
                 if (idx > 1 && e.target.value.trim()) {
                   entries[idx-1].text = entries[idx-1].text.trim() + ' ' + e.target.value.trim();
                 }
                 entries.splice(idx, 1);
-                render();
+                updateRecord(db, list.id, { entries }).then(() => {
+                  autoFocusIndex = idx-1;
+                  render();
+                });
               } else {
                 bspace -= 1;
                 e.target.dataset.bspace = bspace;
@@ -292,6 +294,7 @@
           });
         });
         const text = document.createElement("input");
+        text.className = "text";
         text.value = entry.text;
         if (entries.length == 1 && !text.value) {
           text.placeholder = "Starting item...";
