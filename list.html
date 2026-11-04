@@ -192,22 +192,33 @@
     }
 
     const storeName = "listDB";
+    const settingsKey = "list:settings";
     const urlKey = "id";
     let db = null;
     let lists = null;
     let autoFocusIndex = null;
-    let autoHideChecked = hideCheckedToggle.checked;
+    const settings = loadSettings();
 
-    function render(id) {
-      hideCheckedToggle.checked = autoHideChecked;
-      renderListOptions(lists, id || listSelect.value);
+    function saveSettings() {
+      localStorage.setItem(settingsKey, JSON.stringify(settings));
+    }
+    function loadSettings() {
+      return JSON.parse(localStorage.getItem(settingsKey)) ||
+        { hideChecked: false, view: 'list', id: null };
+    }
+
+    function render() {
+      const list = lists.find((l) => l.id == settings.listId) || lists[0];
+      const checked = list?.entries.filter((i) => i.status == ItemStatus.Checked);
+      hideCheckedToggle.checked = settings.hideChecked;
+      renderListOptions(lists, list?.id);
+      listSelect.value = list?.id || "";
       listSelect.disabled = lists.length == 0;
-      const list = lists.find((l) => l.id == listSelect.value);
-      const checked = list?.entries.filter((entry) => entry.status == ItemStatus.Checked);
       document.body.classList.toggle('loaded', !!list);
-      document.body.classList.toggle('autohide', autoHideChecked);
+      document.body.classList.toggle('autohide', settings.hideChecked);
       document.body.classList.toggle('checked', !!checked?.length);
-      allHiddenReveal.innerText = autoHideChecked ? 'Show' : 'Hide';
+      document.body.classList.toggle('gridview', settings.view == 'grid');
+      allHiddenReveal.innerText = settings.hideChecked ? 'Show' : 'Hide';
       if (list && checked) {
         allHiddenText.innerText = `${checked.length} checked ${checked.length == 1 ? 'entry' : 'entries'}`;
       }
@@ -323,13 +334,16 @@
     });
 
     hideCheckedToggle.addEventListener('change', (e) => {
-      autoHideChecked = hideCheckedToggle.checked;
+      settings.hideChecked = hideCheckedToggle.checked;
+      saveSettings();
       render();
     });
 
     listSelect.addEventListener('change', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      settings.listId = listSelect.value;
+      saveSettings();
       render();
     });
 
@@ -387,7 +401,9 @@
       document.body.classList.toggle('nav');
     });
     topnavGridIcon.addEventListener('click', (e) => {
-      document.body.classList.toggle('gridview');
+      settings.view = settings.view == 'list' ? 'grid' : 'list';
+      saveSettings();
+      render();
     });
 
     clearListButton.addEventListener('click', (e) => {
@@ -409,7 +425,8 @@
     allHiddenReveal.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      autoHideChecked = !autoHideChecked;
+      settings.hideChecked = !settings.hideChecked;
+      saveSettings();
       render();
     });
 
@@ -417,11 +434,11 @@
       return [{text:''}];
     }
 
-    async function loadLists(id) {
+    async function loadLists() {
       db = await openDatabase(storeName);
       getAll(db).then((result) => {
         lists = result;
-        render(id);
+        render();
       });
     }
 
@@ -431,7 +448,9 @@
         entries: blankList(),
         createdAt: Date.now()
       }).then((id) => {
-        loadLists(id);
+        settings.listId = id;
+        saveSettings();
+        loadLists();
       });
     }
 

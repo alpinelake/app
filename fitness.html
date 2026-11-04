@@ -119,10 +119,8 @@
     let db = null;
     let records = null;
     const settings = loadSettings();
-    hideInactiveToggle.checked = settings.hideInactive;
 
     function saveSettings() {
-      settings.hideInactive = hideInactiveToggle.checked;
       localStorage.setItem(settingsKey, JSON.stringify(settings));
     }
     function loadSettings() {
@@ -131,8 +129,9 @@
     }
 
     function render(addedId, force) {
-      document.body.classList.toggle('hideinactive', hideInactiveToggle.checked);
-      renderFlatUi(records || [], hideInactiveToggle.checked, force);
+      hideInactiveToggle.checked = settings.hideInactive;
+      document.body.classList.toggle('hideinactive', settings.hideInactive);
+      renderFlatUi(records || [], settings.hideInactive, force);
       if (addedId) {
         const record = container.querySelector(`.record[data-id="${addedId}"]`);
         const title = record.querySelector(`.title`);
@@ -399,12 +398,13 @@
     });
 
     hideInactiveToggle.addEventListener("change", (e) => {
+      settings.hideInactive = hideInactiveToggle.checked;
       saveSettings();
       render();
     });
     hideInactiveLabel.addEventListener("click", (e) => {
       e.stopPropagation();
-      hideInactiveToggle.checked = !hideInactiveToggle.checked;
+      settings.hideInactive = !hideInactiveToggle.checked;
       saveSettings();
       render();
     });
