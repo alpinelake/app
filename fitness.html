@@ -113,10 +113,22 @@
     }
 
     const storeName = "fitnessDB";
+    const settingsKey = "fitness:settings";
     const RecordState = { Inactive: 1, Active: 2 };
     const RecordPinned = { Pinned: 1 };
     let db = null;
     let records = null;
+    const settings = loadSettings();
+    hideInactiveToggle.checked = settings.hideInactive;
+
+    function saveSettings() {
+      settings.hideInactive = hideInactiveToggle.checked;
+      localStorage.setItem(settingsKey, JSON.stringify(settings));
+    }
+    function loadSettings() {
+      return JSON.parse(localStorage.getItem(settingsKey)) ||
+        { hideInactive: false };
+    }
 
     function render(addedId, force) {
       document.body.classList.toggle('hideinactive', hideInactiveToggle.checked);
@@ -387,11 +399,13 @@
     });
 
     hideInactiveToggle.addEventListener("change", (e) => {
+      saveSettings();
       render();
     });
     hideInactiveLabel.addEventListener("click", (e) => {
       e.stopPropagation();
       hideInactiveToggle.checked = !hideInactiveToggle.checked;
+      saveSettings();
       render();
     });
 
