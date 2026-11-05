@@ -236,12 +236,12 @@
       let lastdone = false;
       if (data.last) {
         let diff = Math.abs(new Date() - data.last);
-        let hours = Math.floor(diff / (1000 * 60 * 60));
-        let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        let hours = Math.round(diff / (1000 * 60 * 60));
+        let days = Math.round(diff / (1000 * 60 * 60 * 24));
         if (hours < 2) {
           lastLabel.innerText = '';
           recent = true;
-        } else if (hours < 24) {
+        } else if (hours < 18) {
           lastLabel.innerText = '';
           lastdone = true;
         } else {
