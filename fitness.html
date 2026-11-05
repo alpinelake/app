@@ -38,7 +38,7 @@
     .record > div { padding: 0px 15px 0 12px; }
     .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
     .record .idetails { display: flex; justify-content: space-between; padding-bottom: 7px; }
-    .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; }
+    .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
     .record:not(.selected):not(.blank) .field:placeholder-shown { display: none; }
@@ -51,7 +51,7 @@
     .record.blank .lastGroup { display: none; }
     .record.inactive .lastGroup { display: none; }
     .record .titleText { padding-bottom: 0; font-size: 16px; }
-    .record.selected { color: orange; background: #fff9ef; border: 1px solid; }
+    .record.selected { color: orange; background: #fff9ef; border: 1px solid; min-height: 120px; }
     .record.selected .icontrols { background: orange; color: white; }
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
@@ -221,13 +221,6 @@
       desc.value = data.desc || "";
       desc.dataset.original = desc.value;
       desc.spellcheck = false;
-      const reps = document.createElement("textarea");
-      reps.className = "field reps";
-      reps.dataset.field = "reps";
-      reps.placeholder = "Sets/reps";
-      reps.addEventListener("keydown", onFieldKeydown);
-      reps.value = data.reps || "";
-      reps.dataset.original = reps.value;
 
       const titleText = document.createElement("div");
       titleText.className = "titleText";
@@ -249,7 +242,7 @@
         let diff = Math.abs(new Date() - data.last);
         let hours = Math.floor(diff / (1000 * 60 * 60));
         let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        if (hours < 3) {
+        if (hours < 2) {
           lastLabel.innerText = '';
           recent = true;
         } else if (hours < 24) {
@@ -350,7 +343,7 @@
       statusGroup.className = "statusGroup";
       statusGroup.append(activeStatus, pinnedStatus);
 
-      col1.append(descText, desc, reps);
+      col1.append(descText, desc);
       col2.append(lastGroup);
       ihead.append(titleText, title);
       idetails.append(col1, col2);
