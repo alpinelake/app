@@ -35,9 +35,7 @@
       font-size: 16px;
     }
     .record:nth-child(2n+1) { background: #f9f9f9; }
-    .record > div { padding: 0px 15px 0 12px; }
-    .record .ihead { padding-top: 7px; display: flex; gap: 5px; }
-    .record .idetails { display: flex; justify-content: space-between; padding-bottom: 7px; }
+    .record .idetails { display: flex; justify-content: space-between; padding: 7px 15px 7px 13px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
     .record .icontrols input { accent-color: var(--accent); height: 18px; width: 18px; }
@@ -50,7 +48,6 @@
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
     .record.inactive .lastGroup { display: none; }
-    .record .titleText { padding-bottom: 0; font-size: 16px; }
     .record.selected { color: orange; background: #fff9ef; border: 1px solid; min-height: 120px; }
     .record.selected .icontrols { background: orange; color: white; }
     .record.selected .lastGroup { display: none; }
@@ -58,13 +55,14 @@
     .record.selected .descText { display: none; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
     .record:not(.selected):not(.inactive).lastdone { background: #beffbe; color: green; }
-    .record:not(.selected):not(.blank):not(.recent):not(.lastdone) .idetails { color: #777; }
+    .record:not(.selected):not(.blank):not(.recent):not(.lastdone) .descText { color: #777; }
     .record:not(.selected).inactive { opacity: .5; }
 
     .record .col1 { display: flex; flex-direction: column; }
-    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding-right: 5px; text-align: right; line-height: 18px; }
+    .record .col2 { align-content: center; }
+    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; color: #777; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
-    .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; min-width: 50px; }
+    .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record.inactive { display: none; }
 
     #nav { display: flex; padding: 10px 15px; user-select: none; justify-content: space-between; align-items: center; font-size: 17px; height: 32px; border-bottom: 1px solid #C7CAD4; color: #5C77D6; }
@@ -195,8 +193,6 @@
         }
       }
 
-      const ihead = document.createElement("div");
-      ihead.className = "ihead";
       const idetails = document.createElement("div");
       idetails.className = "idetails";
       const icontrols = document.createElement("div");
@@ -343,12 +339,11 @@
       statusGroup.className = "statusGroup";
       statusGroup.append(activeStatus, pinnedStatus);
 
-      col1.append(descText, desc);
+      col1.append(titleText, title, descText, desc);
       col2.append(lastGroup);
-      ihead.append(titleText, title);
       idetails.append(col1, col2);
       icontrols.append(statusGroup, delGroup);
-      root.append(ihead, idetails, icontrols);
+      root.append(idetails, icontrols);
       root.classList.toggle('inactive', !active);
       root.classList.toggle('pinned', pinned);
       root.classList.toggle('recent', recent);
