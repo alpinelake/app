@@ -37,7 +37,7 @@
     /*
     .record:nth-child(2n+1) { background: #f9f9f9; }
     */
-    .record.group0 { background: #f9f9f9; }
+    .record:not(.pinned).group0 { background: #ffedd7; }
     .record .idetails { display: flex; justify-content: space-between; padding: 7px 15px 7px 13px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
@@ -60,6 +60,7 @@
     .record:not(.selected):not(.inactive).lastdone { background: #beffbe; color: green; }
     .record:not(.selected):not(.blank):not(.recent):not(.lastdone) .descText { color: #777; }
     .record:not(.selected).inactive { opacity: .5; }
+    .record:nth-last-child(1 of .pinned) { border-bottom: 3px solid #FFDEC0; }
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
@@ -224,9 +225,11 @@
       const titleText = document.createElement("div");
       titleText.className = "titleText";
       titleText.innerText = data.title || "";
+      /*
       if (pinned) {
         titleText.innerText = "⭐ " + titleText.innerText;
       }
+      */
       const descText = document.createElement("div");
       descText.className = "descText";
       descText.innerText = data.desc || "";
