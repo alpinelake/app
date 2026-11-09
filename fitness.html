@@ -34,7 +34,10 @@
       flex-direction: column;
       font-size: 16px;
     }
+    /*
     .record:nth-child(2n+1) { background: #f9f9f9; }
+    */
+    .record.group0 { background: #f9f9f9; }
     .record .idetails { display: flex; justify-content: space-between; padding: 7px 15px 7px 13px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
@@ -360,6 +363,8 @@
     const renderFlatUi = compose((data, hideInactive, force) => {
       if (force) console.log(`force render ${force}`);
       container.replaceChildren();
+      let lastDoneDay = null;
+      let lastDoneStyle = "group1";
       data.sort((a,b) => {
         if (a.pin == b.pin) {
           return a.last - b.last;
@@ -373,6 +378,17 @@
       }).forEach((record, index) => {
         if (!hideInactive || record.state == RecordState.Active || !record.state) {
           const el = buildRecordUi(record);
+          // group same-day records for styling
+          if (record.last) {
+            const lastDone = new Date(record.last);
+            lastDone.setHours(0);
+            let day = lastDone.getDate();
+            if (lastDoneDay != day) {
+              lastDoneDay = day;
+              lastDoneStyle = lastDoneStyle == "group1" ? "group0" : "group1";
+            }
+            el.classList.add(lastDoneStyle);
+          }
           container.append(el);
         }
       });
