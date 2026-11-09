@@ -235,16 +235,20 @@
       let recent = false;
       let lastdone = false;
       if (data.last) {
-        let diff = Math.abs(new Date() - data.last);
-        let hours = Math.round(diff / (1000 * 60 * 60));
-        let days = Math.round(diff / (1000 * 60 * 60 * 24));
-        if (hours < 2) {
-          lastLabel.innerText = '';
-          recent = true;
-        } else if (hours < 18) {
-          lastLabel.innerText = '';
-          lastdone = true;
+        const last = new Date(data.last);
+        const dayStart = new Date();
+        dayStart.setHours(0);
+        if (last > dayStart) {
+          const hours = Math.round((new Date() - last) / (1000 * 60 * 60));
+          if (hours < 2) {
+            lastLabel.innerText = '';
+            recent = true;
+          } else {
+            lastLabel.innerText = '';
+            lastdone = true;
+          }
         } else {
+          const days = Math.round((new Date() - last) / (1000 * 60 * 60 * 24));
           lastLabel.innerText = `${days}d`;
         }
       } else {
