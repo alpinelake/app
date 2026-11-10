@@ -37,7 +37,7 @@
     /*
     .record:nth-child(2n+1) { background: #f9f9f9; }
     */
-    .record:not(.pinned).group0 { background: #ffedd7; }
+    .record.group0 { background: #ffedd7; }
     .record .idetails { display: flex; justify-content: space-between; padding: 7px 15px 7px 13px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
@@ -56,15 +56,15 @@
     .record.selected .lastGroup { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
+    .record.today .lastGroup { display: none; }
+    .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
-    .record:not(.selected):not(.inactive).lastdone { background: #beffbe; color: green; }
-    .record:not(.selected):not(.blank):not(.recent):not(.lastdone) .descText { color: #777; }
     .record:not(.selected).inactive { opacity: .5; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 3px solid #FFDEC0; }
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
-    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; color: #777; }
+    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record.inactive { display: none; }
@@ -239,27 +239,18 @@
       const lastLabel = document.createElement("div");
       lastLabel.className = "lastLabel";
       let recent = false;
-      let lastdone = false;
+      let today = false;
       if (data.last) {
         const last = new Date(data.last);
         const dayStart = new Date();
         dayStart.setHours(0);
         if (last > dayStart) {
+          today = true;
           const hours = Math.round((new Date() - last) / (1000 * 60 * 60));
           if (hours < 2) {
-            lastLabel.innerText = '';
             recent = true;
-          } else {
-            lastLabel.innerText = '';
-            lastdone = true;
           }
-        } else {
-          last.setHours(0);
-          const days = Math.round((new Date() - last) / (1000 * 60 * 60 * 24));
-          lastLabel.innerText = `${days}d`;
         }
-      } else {
-        lastLabel.innerText = "";
       }
       const lastInput = document.createElement("input");
       lastInput.className = "lastInput";
@@ -358,7 +349,7 @@
       root.classList.toggle('inactive', !active);
       root.classList.toggle('pinned', pinned);
       root.classList.toggle('recent', recent);
-      root.classList.toggle('lastdone', lastdone);
+      root.classList.toggle('today', today);
       root.classList.toggle('blank', !data.title);
       return root;
     }
@@ -366,9 +357,8 @@
     const renderFlatUi = compose((data, hideInactive, force) => {
       if (force) console.log(`force render ${force}`);
       container.replaceChildren();
-      let lastDoneDay = null;
-      let lastDoneStyle = "group1";
-      data.sort((a,b) => {
+
+      const sorted = data.sort((a,b) => {
         if (a.pin == b.pin) {
           return a.last - b.last;
         } else if (a.pin) {
@@ -378,23 +368,46 @@
         } else {
           return a.last - b.last;
         }
-      }).forEach((record, index) => {
-        if (!hideInactive || record.state == RecordState.Active || !record.state) {
-          const el = buildRecordUi(record);
-          // group same-day records for styling
-          if (record.last) {
-            const lastDone = new Date(record.last);
-            lastDone.setHours(0);
-            let day = lastDone.getDate();
-            if (lastDoneDay != day) {
-              lastDoneDay = day;
-              lastDoneStyle = lastDoneStyle == "group1" ? "group0" : "group1";
-            }
-            el.classList.add(lastDoneStyle);
-          }
-          container.append(el);
+      });
+
+      const filtered = hideInactive ? 
+        sorted.filter((a) => a.state == RecordState.Active || !a.state) :
+        sorted;
+
+      filtered.forEach((record, index) => {
+        const el = buildRecordUi(record);
+        container.append(el);
+        if (record.last) {
+          const l = new Date(record.last);
+          const lbase = new Date(l.getFullYear(), l.getMonth(), l.getDate(), 0, 0);
+          const d = new Date();
+          const dbase = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0);
+          const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
+          el.dataset.days = days;
+          el.querySelector('.lastLabel').innerText = `${days}d`;
         }
       });
+
+      const byDay = Object.groupBy(
+        container.querySelectorAll('[data-days]:not(.pinned)'), 
+        (el) => el.dataset.days
+      );
+      const dayKeys = Object.keys(byDay).map(k => parseInt(k));
+      dayKeys.sort((a,b) => a-b);
+      const bucketCount = dayKeys.length;
+      dayKeys.forEach((key, bucketIndex) => {
+        const style = bucketIndex % 2 == 0 ? "group0" : "group1";
+        for (const el of byDay[key]) {
+          el.classList.add(style);
+          /*
+          const lightness = 100-(100/bucketCount)*(bucketIndex);
+          const hsl = `hsl(0, 75%, ${lightness}%)`;
+          el.style.setProperty("background", hsl);
+          el.style.setProperty("color", `contrast-color(${hsl})`);
+          */
+        }
+      });
+
     });
 
     async function loadRecords(addedId) {
