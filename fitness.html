@@ -64,14 +64,8 @@
     .record.selected .lastLabel { display: none; }
     .record.oldest { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
-
-    /*
-    .record:not(.selected).recent .lastGroup { display: none; }
-    .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
-    .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
-    */
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
-    .record:not(.selected):not(.inactive).recent { background: #beffbe; color: green; }
+    .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected).inactive { opacity: .5; }
 
     .record .col1 { display: flex; flex-direction: column; }
