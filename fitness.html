@@ -51,16 +51,17 @@
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
     .record.inactive .lastGroup { display: none; }
-    .record.selected { color: orange; background: #fff9ef; border: 1px solid; min-height: 120px; }
+    .record.selected { border: 1px solid; min-height: 120px; }
     .record.selected .icontrols { background: orange; color: white; }
-    .record.selected .lastGroup { display: none; }
+    .record.selected .lastInput { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
-    .record.today .lastGroup { display: none; }
+    .record:not(.selected).today .lastGroup { display: none; }
+    .record:not(.selected) .lastLabel { display: none; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
     .record:not(.selected).inactive { opacity: .5; }
-    .record:nth-last-child(1 of .pinned) { border-bottom: 3px solid #FFDEC0; }
+    .record:not(.selected):nth-last-child(1 of .pinned) { border-bottom: 3px solid white; }
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
@@ -69,7 +70,17 @@
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
     body.hideinactive .record.inactive { display: none; }
 
-    #nav { display: flex; padding: 10px 15px; user-select: none; justify-content: space-between; align-items: center; font-size: 17px; height: 32px; border-bottom: 1px solid #C7CAD4; color: #5C77D6; }
+    #nav {
+      display: flex;
+      padding: 10px 15px;
+      user-select: none;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 17px;
+      height: 32px;
+      background: #5C77D6;
+      color: white;
+    }
 
     /* Toggle */
     .switch { position: relative; width: 32px; height: 18px; align-self: center; }
@@ -385,26 +396,13 @@
           const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
           el.dataset.days = days;
           el.querySelector('.lastLabel').innerText = `${days}d`;
-        }
-      });
 
-      const byDay = Object.groupBy(
-        container.querySelectorAll('[data-days]:not(.pinned)'), 
-        (el) => el.dataset.days
-      );
-      const dayKeys = Object.keys(byDay).map(k => parseInt(k));
-      dayKeys.sort((a,b) => a-b);
-      const bucketCount = dayKeys.length;
-      dayKeys.forEach((key, bucketIndex) => {
-        const style = bucketIndex % 2 == 0 ? "group0" : "group1";
-        for (const el of byDay[key]) {
-          el.classList.add(style);
-          /*
-          const lightness = 100-(100/bucketCount)*(bucketIndex);
-          const hsl = `hsl(0, 75%, ${lightness}%)`;
-          el.style.setProperty("background", hsl);
-          el.style.setProperty("color", `contrast-color(${hsl})`);
-          */
+          if (record.pin != RecordPinned.Pinned) {
+            const percent = 100-Math.min(100, Math.round(days/14*100));
+            if (percent < 100) {
+              el.style.setProperty("background-image", `linear-gradient(90deg, #46bc46 ${percent}%, ${percent+10}%, #ffd700)`);
+            }
+          }
         }
       });
 
