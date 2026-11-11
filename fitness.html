@@ -51,29 +51,32 @@
     .record:not(.selected):not(.blank) .title { display: none; }
     .record:not(.selected):not(.blank) .desc { display: none; }
     .record:not(.selected) .field { pointer-events: none; }
+    .record:not(.selected):not(.recent) .descText { color: darkgray; }
     .record.blank .titleText { display: none; }
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
     .record.inactive .lastGroup { display: none; }
-    .record.selected { border: 1px solid; min-height: 120px; }
+    .record.selected { border: 2px solid darkgray; min-height: 120px; }
     .record.selected .icontrols { background: orange; color: white; }
     .record.selected .lastInput { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
-    .record:not(.selected).recent .lastGroup { display: none; }
-    .record:not(.selected) .lastLabel { display: none; }
+    .record.selected .lastLabel { display: none; }
+    .record.oldest { background: #ffedd7; }
+    .record.selected { background: #ffedd7 !important; }
+
     /*
+    .record:not(.selected).recent .lastGroup { display: none; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
     */
-    .record:nth-last-child(1 of .pinned) { border-bottom: 3px solid black; }
+    .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
     .record:not(.selected):not(.inactive).recent { background: #beffbe; color: green; }
     .record:not(.selected).inactive { opacity: .5; }
-    .record.selected { background: #ffedd7 !important; }
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
-    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; }
+    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; color: darkgray; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
 
@@ -245,11 +248,6 @@
       const titleText = document.createElement("div");
       titleText.className = "titleText";
       titleText.innerText = data.title || "";
-      /*
-      if (pinned) {
-        titleText.innerText = "⭐ " + titleText.innerText;
-      }
-      */
       const descText = document.createElement("div");
       descText.className = "descText";
       descText.innerText = data.desc || "";
@@ -281,6 +279,7 @@
           lastLabel.innerText = `${days}d`;
         }
 
+        /*
         if (!recent) {
           const percent = 100-Math.min(100, Math.round(days/7*100));
           if (percent <= 100) {
@@ -290,6 +289,7 @@
             );
           }
         }
+        */
       }
 
       const lastInput = document.createElement("input");
@@ -417,6 +417,14 @@
       filtered.forEach((record, index) => {
         const el = buildRecordUi(record);
         container.append(el);
+
+        const old = container.querySelector('.record[data-days]:not(.pinned)')?.dataset.days;
+        if (old) {
+          container.querySelectorAll(`.record[data-days="${old}"]:not(.pinned)`).forEach((el) => {
+            el.classList.add('oldest');
+          });
+        }
+
       });
 
     });
