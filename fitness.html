@@ -42,7 +42,6 @@
     /*
     .record:nth-child(2n+1) { background: #f9f9f9; }
     */
-    .record.group0 { background: #ffedd7; }
     .record .idetails { display: flex; justify-content: space-between; padding: 7px 15px 7px 13px; }
     .record .icontrols { display: flex; gap: 10px; padding: 5px 20px; margin-top: auto; }
     .record .icontrols button { background: var(--accent); border: none; color: orange; padding: 0px 8px; margin: 0; border-radius: 3px; }
@@ -61,21 +60,23 @@
     .record.selected .lastInput { display: none; }
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
-    .record:not(.selected).today .lastGroup { display: none; }
+    .record:not(.selected).recent .lastGroup { display: none; }
     .record:not(.selected) .lastLabel { display: none; }
     /*
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected):not(.inactive).recent { background: #46bc46; color: white; }
     */
+    .record:nth-last-child(1 of .pinned) { border-bottom: 3px solid black; }
     .record:not(.selected):not(.inactive).recent { background: #beffbe; color: green; }
     .record:not(.selected).inactive { opacity: .5; }
-    .record:not(.selected):nth-last-child(1 of .pinned) { border-bottom: 3px solid white; }
+    .record.selected { background: #ffedd7 !important; }
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
     .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
+
     body.hideinactive .record.inactive { display: none; }
 
     #nav {
@@ -276,9 +277,11 @@
         const dbase = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0);
         const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
         root.dataset.days = days;
-        lastLabel.innerText = `${days}d`;
+        if (!today) {
+          lastLabel.innerText = `${days}d`;
+        }
 
-        if (!recent && data.pin != RecordPinned.Pinned) {
+        if (!recent) {
           const percent = 100-Math.min(100, Math.round(days/7*100));
           if (percent <= 100) {
             root.style.setProperty(
@@ -478,7 +481,7 @@
         let diff = Math.abs(new Date() - lastHidden);
         let minutes = Math.floor(diff / (1000 * 60));
         if (minutes > 10) {
-          console.log(`page visibility hidden ${minutes} ago; rerender page`);
+          console.log(`page visibility hidden ${minutes} min ago; rerender page`);
           render(null, lastHidden);
         }
       }
