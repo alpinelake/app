@@ -62,7 +62,7 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record.selected .lastLabel { display: none; }
-    .record.oldest { background: #ffedd7; }
+    body:not(.recent) .record.oldest { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
@@ -150,7 +150,18 @@
     function render(addedId, force) {
       hideInactiveToggle.checked = settings.hideInactive;
       document.body.classList.toggle('hideinactive', settings.hideInactive);
-      renderFlatUi(records || [], settings.hideInactive, force);
+
+      const data = records || [];
+
+      data.forEach((record, index) => {
+        deriveDateInfo(record);
+        if (record.recent) {
+          document.body.classList.add('recent');
+        }
+      });
+
+      renderFlatUi(data, settings.hideInactive, force);
+
       if (addedId) {
         const record = container.querySelector(`.record[data-id="${addedId}"]`);
         const title = record.querySelector(`.title`);
@@ -384,10 +395,6 @@
     const renderFlatUi = compose((data, hideInactive, force) => {
       if (force) console.log(`force render ${force}`);
       container.replaceChildren();
-
-      data.forEach((record, index) => {
-        deriveDateInfo(record);
-      });
 
       const sorted = data.sort((a,b) => {
         if (a.pin == b.pin) {
