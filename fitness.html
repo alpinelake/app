@@ -89,7 +89,6 @@
       color: white;
     }
 
-    /* Toggle */
     .switch { position: relative; width: 32px; height: 18px; align-self: center; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; }
@@ -197,6 +196,30 @@
       }
     }
 
+    function deriveDateInfo(data) {
+      let recent = false;
+      let today = false;
+      if (data.last) {
+        const l = new Date(data.last);
+        const dayStart = new Date();
+        dayStart.setHours(0);
+        if (l > dayStart) {
+          today = true;
+          const hours = Math.round((new Date() - l) / (1000 * 60 * 60));
+          if (hours < 2) {
+            recent = true;
+          }
+        }
+        const lbase = new Date(l.getFullYear(), l.getMonth(), l.getDate(), 0, 0);
+        const d = new Date();
+        const dbase = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0);
+        const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
+        data.days = days;
+      }
+      data.recent = recent;
+      data.today = today;
+    }
+
     function buildRecordUi(data) {
       const root = document.createElement("div");
       root.classList.add('record');
@@ -251,46 +274,15 @@
       lastGroup.className = "lastGroup";
       const lastLabel = document.createElement("div");
       lastLabel.className = "lastLabel";
-      let recent = false;
-      let today = false;
-      if (data.last) {
-        const l = new Date(data.last);
-        const dayStart = new Date();
-        dayStart.setHours(0);
-        if (l > dayStart) {
-          today = true;
-          const hours = Math.round((new Date() - l) / (1000 * 60 * 60));
-          if (hours < 2) {
-            recent = true;
-          }
-        }
-
-        const lbase = new Date(l.getFullYear(), l.getMonth(), l.getDate(), 0, 0);
-        const d = new Date();
-        const dbase = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0);
-        const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
-        root.dataset.days = days;
-        if (!today) {
-          lastLabel.innerText = `${days}d`;
-        }
-
-        /*
-        if (!recent) {
-          const percent = 100-Math.min(100, Math.round(days/7*100));
-          if (percent <= 100) {
-            root.style.setProperty(
-              "background-image",
-              `linear-gradient(90deg, var(--hstart) ${percent}%, ${percent}%, var(--hend))`
-            );
-          }
-        }
-        */
+      root.dataset.days = data.days;
+      if (data.days && !data.today) {
+        lastLabel.innerText = `${data.days}d`;
       }
 
       const lastInput = document.createElement("input");
       lastInput.className = "lastInput";
       lastInput.type = "checkbox";
-      lastInput.checked = recent;
+      lastInput.checked = data.recent;
       function checkDone() {
         lastInput.checked = true;
         lastLabel.innerText = "";
@@ -383,8 +375,8 @@
       root.append(idetails, icontrols);
       root.classList.toggle('inactive', !active);
       root.classList.toggle('pinned', pinned);
-      root.classList.toggle('recent', recent);
-      root.classList.toggle('today', today);
+      root.classList.toggle('recent', data.recent);
+      root.classList.toggle('today', data.today);
       root.classList.toggle('blank', !data.title);
       return root;
     }
@@ -393,9 +385,21 @@
       if (force) console.log(`force render ${force}`);
       container.replaceChildren();
 
+      data.forEach((record, index) => {
+        deriveDateInfo(record);
+      });
+
       const sorted = data.sort((a,b) => {
         if (a.pin == b.pin) {
-          return a.last - b.last;
+          if (a.recent == b.recent) {
+            return a.last - b.last;
+          } else if (a.recent) {
+            return -1;
+          } else if (b.recent) {
+            return 1;
+          } else {
+            return a.last - b.last;
+          }
         } else if (a.pin) {
           return -1;
         } else if (b.pin) {
@@ -405,6 +409,7 @@
         }
       });
 
+      // construct list
       const filtered = hideInactive ? 
         sorted.filter((a) => a.state == RecordState.Active || !a.state) :
         sorted;
@@ -412,15 +417,21 @@
       filtered.forEach((record, index) => {
         const el = buildRecordUi(record);
         container.append(el);
-
-        const old = container.querySelector('.record[data-days]:not(.pinned)')?.dataset.days;
-        if (old) {
-          container.querySelectorAll(`.record[data-days="${old}"]:not(.pinned)`).forEach((el) => {
-            el.classList.add('oldest');
-          });
-        }
-
       });
+
+      // highlight oldest unpinned records
+      const oldest = data
+        .filter((r) => r.pin != RecordPinned.Pinned)
+        .reduce((prev, current) => {
+          if (prev.recent) return prev;
+          else if (current.recent) return current;
+          return (!current.days || (prev.days && prev.days > current.days)) ? prev : current;
+        });
+      if (oldest) {
+        container.querySelectorAll(`.record[data-days="${oldest.days}"]:not(.pinned)`).forEach((el) => {
+          el.classList.add('oldest');
+        });
+      }
 
     });
 
