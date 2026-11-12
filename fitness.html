@@ -51,7 +51,7 @@
     .record:not(.selected):not(.blank) .title { display: none; }
     .record:not(.selected):not(.blank) .desc { display: none; }
     .record:not(.selected) .field { pointer-events: none; }
-    .record:not(.selected) .descText { opacity: .5; }
+    .record:not(.selected) .descText { opacity: .7; }
     .record.blank .titleText { display: none; }
     .record.blank .descText { display: none; }
     .record.blank .lastGroup { display: none; }
@@ -70,7 +70,8 @@
 
     .record .col1 { display: flex; flex-direction: column; }
     .record .col2 { align-content: center; }
-    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; color: darkgray; }
+    .record .lastGroup { display: flex; gap: 5px; align-items: center; user-select: none; padding: 5px; text-align: right; line-height: 18px; }
+    .record .lastLabel { opacity: .7; }
     .record .lastInput { width: 25px; height: 25px; accent-color: #46bc46; min-width: 25px; min-height: 25px; }
     .record textarea { field-sizing: content; border: none; outline: none; appearance: none; resize: none; display: flex; align-content: center; background: none; color: inherit; padding: 0; }
 
