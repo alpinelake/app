@@ -62,7 +62,7 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record.selected .lastLabel { display: none; }
-    body:not(.recent) .record.oldest { background: #ffedd7; }
+    body:not(.today) .record.oldest { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
@@ -155,8 +155,8 @@
 
       data.forEach((record, index) => {
         deriveDateInfo(record);
-        if (record.recent) {
-          document.body.classList.add('recent');
+        if (record.today) {
+          document.body.classList.add('today');
         }
       });
 
