@@ -149,12 +149,14 @@
       hideInactiveToggle.checked = settings.hideInactive;
 
       const data = records || [];
+      let today = false;
       data.forEach((record, index) => {
         deriveDateInfo(record);
         if (record.today) {
-          document.body.classList.add('today');
+          today = true;
         }
       });
+      document.body.classList.toggle('today', today);
 
       // render list
       renderFlatUi(data, settings.hideInactive, force);
