@@ -62,7 +62,7 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record.selected .lastLabel { display: none; }
-    body:not(.today) .record.oldest { background: #ffedd7; }
+    body:not(.donetoday) .record.oldest { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
@@ -149,14 +149,15 @@
       hideInactiveToggle.checked = settings.hideInactive;
 
       const data = records || [];
-      let today = false;
+      let donetoday = false;
       data.forEach((record, index) => {
         deriveDateInfo(record);
-        if (record.today) {
-          today = true;
+        const active = !record.state || record.state == RecordState.Active;
+        if (active && record.today && !record.pin) {
+          donetoday = true;
         }
       });
-      document.body.classList.toggle('today', today);
+      document.body.classList.toggle('donetoday', donetoday);
 
       // render list
       renderFlatUi(data, settings.hideInactive, force);
