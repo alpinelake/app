@@ -149,11 +149,12 @@
       hideInactiveToggle.checked = settings.hideInactive;
 
       const data = records || [];
+
       let donetoday = false;
       data.forEach((record, index) => {
         deriveDateInfo(record);
         const active = !record.state || record.state == RecordState.Active;
-        if (active && record.today && !record.pin) {
+        if (active && record.today && !record.recent && !record.pin) {
           donetoday = true;
         }
       });
@@ -163,11 +164,13 @@
       renderFlatUi(data, settings.hideInactive, force);
 
       // highlight oldest unpinned records
-      const oldest = container.querySelector(`.record[data-days]:not(.pinned)`);
+      const oldest = container.querySelector(`.record[data-days]:not(.pinned):not(.recent)`);
       if (oldest && oldest.dataset.days) {
-        container.querySelectorAll(`.record[data-days="${oldest.dataset.days}"]:not(.pinned)`).forEach((el) => {
-          el.classList.add('oldest');
-        });
+        container
+          .querySelectorAll(`.record[data-days="${oldest.dataset.days}"]:not(.pinned):not(.recent)`)
+          .forEach((el) => {
+            el.classList.add('oldest');
+          });
       }
 
       // auto-edit and focus
@@ -294,7 +297,7 @@
       lastGroup.className = "lastGroup";
       const lastLabel = document.createElement("div");
       lastLabel.className = "lastLabel";
-      root.dataset.days = data.days;
+      root.dataset.days = data.days || "";
       if (data.days && !data.today) {
         lastLabel.innerText = `${data.days}d`;
       }
