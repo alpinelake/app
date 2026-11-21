@@ -149,7 +149,7 @@
       hideInactiveToggle.checked = settings.hideInactive;
 
       const data = (records || []).filter((r) => {
-        return settings.hideInactive && (r.state == RecordState.Active || !r.state);
+        return settings.hideInactive ? (r.state == RecordState.Active || !r.state) : true;
       });
 
       data.forEach((record, index) => {
@@ -158,12 +158,15 @@
 
       const pinned = data.filter((r) => r.pin == RecordPinned.Pinned);
       const unpinned = data.filter((r) => r.pin != RecordPinned.Pinned);
-      const highlight = unpinned.find((r) => r.recent) || 
-        unpinned.reduce((prev, current) => {
+      let highlight = null;
+      if (unpinned.length > 0) {
+        const recent = unpinned.find((r) => r.recent);
+        highlight = recent || unpinned.reduce((prev, current) => {
           return (!current.days || (prev && prev.days > current.days)) ? prev : current;
         });
+      }
 
-      const highlightDay = highlight && highlight.recent ? highlight.pdays : highlight.days;
+      const highlightDay = highlight?.recent ? highlight.pdays : highlight?.days;
 
       renderFlatUi(pinned, unpinned, highlightDay, force);
 
