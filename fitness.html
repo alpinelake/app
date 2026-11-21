@@ -62,7 +62,7 @@
     .record.selected .titleText { display: none; }
     .record.selected .descText { display: none; }
     .record.selected .lastLabel { display: none; }
-    body:not(.donetoday) .record.oldest { background: #ffedd7; }
+    .record.highlight { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
@@ -148,30 +148,24 @@
     function render(addedId, force) {
       hideInactiveToggle.checked = settings.hideInactive;
 
-      const data = records || [];
+      const data = (records || []).filter((r) => {
+        return settings.hideInactive && (r.state == RecordState.Active || !r.state);
+      });
 
-      let donetoday = false;
       data.forEach((record, index) => {
         deriveDateInfo(record);
-        const active = !record.state || record.state == RecordState.Active;
-        if (active && record.today && !record.recent && !record.pin) {
-          donetoday = true;
-        }
       });
-      document.body.classList.toggle('donetoday', donetoday);
 
-      // render list
-      renderFlatUi(data, settings.hideInactive, force);
+      const pinned = data.filter((r) => r.pin == RecordPinned.Pinned);
+      const unpinned = data.filter((r) => r.pin != RecordPinned.Pinned);
+      const highlight = unpinned.find((r) => r.recent) || 
+        unpinned.reduce((prev, current) => {
+          return (!current.days || (prev && prev.days > current.days)) ? prev : current;
+        });
 
-      // highlight oldest unpinned records
-      const oldest = container.querySelector(`.record[data-days]:not(.pinned):not(.recent)`);
-      if (oldest && oldest.dataset.days) {
-        container
-          .querySelectorAll(`.record[data-days="${oldest.dataset.days}"]:not(.pinned):not(.recent)`)
-          .forEach((el) => {
-            el.classList.add('oldest');
-          });
-      }
+      const highlightDay = highlight && highlight.recent ? highlight.pdays : highlight.days;
+
+      renderFlatUi(pinned, unpinned, highlightDay, force);
 
       // auto-edit and focus
       if (addedId) {
@@ -238,14 +232,22 @@
         const dbase = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0);
         const days = Math.round((dbase - lbase) / (1000 * 60 * 60 * 24));
         data.days = days;
+
+        if (data.prev) {
+          const p = new Date(data.prev);
+          const pbase = new Date(p.getFullYear(), p.getMonth(), p.getDate(), 0, 0);
+          const pdays = Math.round((dbase - pbase) / (1000 * 60 * 60 * 24));
+          data.pdays = pdays;
+        }
       }
       data.recent = recent;
       data.today = today;
     }
 
-    function buildRecordUi(data) {
+    function buildRecordUi(data, highlight) {
       const root = document.createElement("div");
       root.classList.add('record');
+      root.classList.toggle('highlight', highlight);
       root.dataset.id = data.id;
 
       const pinned = data.pin == RecordPinned.Pinned;
@@ -405,33 +407,30 @@
       return root;
     }
 
-    const renderFlatUi = compose((data, hideInactive, force) => {
+    const renderFlatUi = compose((pinned, unpinned, highlightDay, force) => {
       if (force) console.log(`force render ${force}`);
       container.replaceChildren();
 
-      const sorted = data.sort((a,b) => {
-        if (a.pin == b.pin) {
-          let a1 = a.recent ? a.prev : a.last;
-          let b1 = b.recent ? b.prev : b.last;
-          return a1 - b1;
-        } else if (a.pin) {
-          return -1;
-        } else if (b.pin) {
-          return 1;
-        } else {
-          let a1 = a.recent ? a.prev : a.last;
-          let b1 = b.recent ? b.prev : b.last;
-          return a1 - b1;
-        }
+      const pinned1 = pinned.sort((a,b) => {
+        let a1 = a.recent ? a.prev : a.last;
+        let b1 = b.recent ? b.prev : b.last;
+        return a1 - b1;
+      });
+      const unpinned1 = unpinned.sort((a,b) => {
+        let a1 = a.recent ? a.prev : a.last;
+        let b1 = b.recent ? b.prev : b.last;
+        return a1 - b1;
       });
 
-      // construct list
-      const filtered = hideInactive ? 
-        sorted.filter((a) => a.state == RecordState.Active || !a.state) :
-        sorted;
+      pinned1.forEach((record, index) => {
+        const highlight = highlightDay != undefined && record.days == highlightDay;
+        const el = buildRecordUi(record, highlight);
+        container.append(el);
+      });
 
-      filtered.forEach((record, index) => {
-        const el = buildRecordUi(record);
+      unpinned1.forEach((record, index) => {
+        const highlight = highlightDay != undefined && record.days == highlightDay;
+        const el = buildRecordUi(record, highlight);
         container.append(el);
       });
 
