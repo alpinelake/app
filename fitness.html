@@ -57,7 +57,9 @@
     .record.selected .lastLabel { display: none; }
     .record:not(.pinned).highlight { background: #ffedd7; }
     .record.selected { background: #ffedd7 !important; }
+    /*
     .record:nth-last-child(1 of .pinned) { border-bottom: 2px solid #ffc9c9; }
+    */
     .record:not(.selected):not(.inactive).today { background: #beffbe; color: green; }
     .record:not(.selected).inactive { opacity: .5; }
 
@@ -93,6 +95,12 @@
     .activeStatus { display: flex; gap: 5px; align-items: center; }
     .pinnedStatus { display: flex; gap: 5px; align-items: center; }
     .statusGroup { display: flex; gap: 10px; }    
+
+    .pinned-box { max-height: 130px; overflow: hidden; position: relative; }
+    .box-handle { background: hsl(220, 40%, 60%, .8); color: white; width: 100%; position: absolute; bottom: 0; display: flex; align-items: center; justify-content: center; user-select: none; height: 25px; box-sizing: border-box; font-family: Arial; }
+    .pinned-box.expandable.expanded { max-height: initial; overflow: auto; padding-bottom: 25px; }
+    .pinned-box.expanded .handle-text::after { content: "Collapse"; }
+    .pinned-box:not(.expanded) .handle-text::after { content: "Expand"; }
   </style>
 </head>
 <body>
@@ -418,17 +426,40 @@
         return a1 - b1;
       });
 
-      pinned1.forEach((record, index) => {
-        const highlight = highlightDay != undefined && record.days == highlightDay;
-        const el = buildRecordUi(record, highlight);
-        container.append(el);
-      });
+      const box1 = document.createElement("div");
+      box1.className = "box pinned-box";
+      const box2 = document.createElement("div");
+      box2.className = "box";
 
-      unpinned1.forEach((record, index) => {
-        const highlight = highlightDay != undefined && record.days == highlightDay;
-        const el = buildRecordUi(record, highlight);
-        container.append(el);
-      });
+      if (pinned1.length > 0) {
+        pinned1.forEach((record, index) => {
+          const highlight = highlightDay != undefined && record.days == highlightDay;
+          const el = buildRecordUi(record, highlight);
+          box1.append(el);
+        });
+        container.append(box1);
+      }
+      if (pinned1.length > 2) {
+        box1.classList.add('expandable');
+        const handle = document.createElement("div");
+        handle.className = "box-handle";
+        handle.addEventListener("click", (e) => {
+          box1.classList.toggle('expanded');
+        });
+        const handleText = document.createElement("div");
+        handleText.className = "handle-text";
+        handle.append(handleText);
+        box1.append(handle);
+      }
+
+      if (unpinned1.length > 0) {
+        unpinned1.forEach((record, index) => {
+          const highlight = highlightDay != undefined && record.days == highlightDay;
+          const el = buildRecordUi(record, highlight);
+          box2.append(el);
+        });
+        container.append(box2);
+      }
 
     });
 
