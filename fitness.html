@@ -97,24 +97,30 @@
     .pinnedStatus { display: flex; gap: 5px; align-items: center; }
     .statusGroup { display: flex; gap: 10px; }    
 
-    .pinned-box { max-height: 130px; overflow: hidden; position: relative; }
+    .pinned-box.expandable { max-height: 130px; overflow: hidden; position: relative; }
     .box-handle {
-      background: linear-gradient(to bottom, transparent, hsl(220, 20%, 95%, .5));
+      background: linear-gradient(to bottom, transparent, #D1D9F4);
+      border-bottom: 2px solid #D1D9F4;
       width: 100%;
       position: absolute;
       bottom: 0;
       display: flex;
-      align-items: center;
+      align-items: end;
       justify-content: center;
       user-select: none;
-      height: 35px;
+      height: 40px;
       box-sizing: border-box;
       font-family: Arial;
-      border-bottom: 2px solid lightgray;
+      font-variant: all-small-caps;
+      font-weight: bold;
+      color: white;
+      font-size: 1.1em;
     }
-    body.pinnedExpanded .pinned-box.expandable { max-height: initial; overflow: auto; padding-bottom: 35px; }
+    body.pinnedExpanded .pinned-box.expandable { max-height: initial; overflow: auto; padding-bottom: 40px; }
     body.pinnedExpanded .pinned-box .handle-text::after { content: "Collapse"; }
     .pinned-box .handle-text::after { content: "Expand"; }
+    body:not(.pinnedExpanded) .pinned-box .record { pointer-events: none; }
+
   </style>
 </head>
 <body>
