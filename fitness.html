@@ -78,6 +78,7 @@
       align-items: center;
       font-size: 17px;
       height: 32px;
+      min-height: 32px;
       background: #5C77D6;
       color: white;
     }
@@ -97,7 +98,7 @@
     .statusGroup { display: flex; gap: 10px; }    
 
     .pinned-box { max-height: 130px; overflow: hidden; position: relative; }
-    .box-handle { background: hsl(220, 40%, 60%, .8); color: white; width: 100%; position: absolute; bottom: 0; display: flex; align-items: center; justify-content: center; user-select: none; height: 25px; box-sizing: border-box; font-family: Arial; }
+    .box-handle { background: hsl(220, 20%, 60%, .8); color: white; width: 100%; position: absolute; bottom: 0; display: flex; align-items: center; justify-content: center; user-select: none; height: 30px; box-sizing: border-box; font-family: Arial; }
     .pinned-box.expandable.expanded { max-height: initial; overflow: auto; padding-bottom: 25px; }
     .pinned-box.expanded .handle-text::after { content: "Collapse"; }
     .pinned-box:not(.expanded) .handle-text::after { content: "Expand"; }
@@ -135,7 +136,7 @@
     const RecordState = { Inactive: 1, Active: 2 };
     const RecordPinned = { Pinned: 1 };
     let db = null;
-    let records = null;
+    let records = [];
     const settings = loadSettings();
 
     function saveSettings() {
@@ -149,22 +150,21 @@
     function render(addedId, force) {
       hideInactiveToggle.checked = settings.hideInactive;
 
-      const data = (records || []).filter((r) => {
-        return settings.hideInactive ? (r.state == RecordState.Active || !r.state) : true;
+      records.forEach((record, index) => {
+        deriveInfo(record);
       });
 
-      data.forEach((record, index) => {
-        deriveDateInfo(record);
-      });
-
-      const pinned = data.filter((r) => r.pin == RecordPinned.Pinned);
-      const unpinned = data.filter((r) => r.pin != RecordPinned.Pinned);
+      const filtered = records.filter((r) => settings.hideInactive ? r.active : true);
+      const pinned = filtered.filter((r) => r.pin == RecordPinned.Pinned);
+      const unpinned = filtered.filter((r) => r.pin != RecordPinned.Pinned);
       let highlight = null;
       if (unpinned.length > 0) {
-        const recent = unpinned.find((r) => r.recent);
-        highlight = recent || unpinned.reduce((prev, current) => {
-          return (!current.days || (prev && prev.days > current.days)) ? prev : current;
-        });
+        const recent = unpinned.find((r) => r.recent && r.active);
+        highlight = recent || unpinned
+          .filter((r) => r.active)
+          .reduce((prev, current) => {
+            return (!current.days || (prev && prev.days > current.days)) ? prev : current;
+          });
       }
 
       const highlightDay = highlight?.recent ? highlight.pdays : highlight?.days;
@@ -217,7 +217,7 @@
       }
     }
 
-    function deriveDateInfo(data) {
+    function deriveInfo(data) {
       let recent = false;
       let today = false;
       if (data.last) {
@@ -246,6 +246,7 @@
       }
       data.recent = recent;
       data.today = today;
+      data.active = data.state == RecordState.Active || !data.state;
     }
 
     function buildRecordUi(data, highlight) {
@@ -357,12 +358,11 @@
       delGroup.append(delButton);
 
 
-      const active = !data.state || data.state == RecordState.Active;
       const activeStatus = document.createElement("div");
       activeStatus.className = "activeStatus";
       const activeInput = document.createElement("input");
       activeInput.className = "active";
-      activeInput.checked = active;
+      activeInput.checked = data.active;
       activeInput.type = "checkbox";
       const activeLabel = document.createElement("label");
       activeLabel.innerText = "Active";
@@ -403,7 +403,7 @@
       idetails.append(col1, col2);
       icontrols.append(statusGroup, delGroup);
       root.append(idetails, icontrols);
-      root.classList.toggle('inactive', !active);
+      root.classList.toggle('inactive', !data.active);
       root.classList.toggle('pinned', pinned);
       root.classList.toggle('recent', data.recent);
       root.classList.toggle('today', data.today);
@@ -466,7 +466,7 @@
     async function loadRecords(addedId) {
       db = await openDatabase(storeName);
       getAll(db).then((result) => {
-        records = result;
+        records = result || [];
         render(addedId);
       });
     }
