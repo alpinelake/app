@@ -98,10 +98,23 @@
     .statusGroup { display: flex; gap: 10px; }    
 
     .pinned-box { max-height: 130px; overflow: hidden; position: relative; }
-    .box-handle { background: hsl(220, 20%, 60%, .8); color: white; width: 100%; position: absolute; bottom: 0; display: flex; align-items: center; justify-content: center; user-select: none; height: 30px; box-sizing: border-box; font-family: Arial; }
-    .pinned-box.expandable.expanded { max-height: initial; overflow: auto; padding-bottom: 25px; }
-    .pinned-box.expanded .handle-text::after { content: "Collapse"; }
-    .pinned-box:not(.expanded) .handle-text::after { content: "Expand"; }
+    .box-handle {
+      background: linear-gradient(to bottom, transparent, hsl(220, 20%, 95%, .5));
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      height: 35px;
+      box-sizing: border-box;
+      font-family: Arial;
+      border-bottom: 2px solid lightgray;
+    }
+    body.pinnedExpanded .pinned-box.expandable { max-height: initial; overflow: auto; padding-bottom: 35px; }
+    body.pinnedExpanded .pinned-box .handle-text::after { content: "Collapse"; }
+    .pinned-box .handle-text::after { content: "Expand"; }
   </style>
 </head>
 <body>
@@ -138,6 +151,7 @@
     let db = null;
     let records = [];
     const settings = loadSettings();
+    let pinnedExpanded = false;
 
     function saveSettings() {
       localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -149,6 +163,7 @@
 
     function render(addedId, force) {
       hideInactiveToggle.checked = settings.hideInactive;
+      document.body.classList.toggle('pinnedExpanded', pinnedExpanded);
 
       records.forEach((record, index) => {
         deriveInfo(record);
@@ -444,7 +459,8 @@
         const handle = document.createElement("div");
         handle.className = "box-handle";
         handle.addEventListener("click", (e) => {
-          box1.classList.toggle('expanded');
+          pinnedExpanded = !pinnedExpanded;
+          render();
         });
         const handleText = document.createElement("div");
         handleText.className = "handle-text";
