@@ -108,15 +108,15 @@
       align-items: end;
       justify-content: center;
       user-select: none;
-      height: 40px;
+      height: 70px;
       box-sizing: border-box;
       font-family: Arial;
       font-variant: all-small-caps;
       font-weight: bold;
       color: white;
-      font-size: 1.1em;
+      font-size: 1.3em;
     }
-    body.pinnedExpanded .pinned-box.expandable { max-height: initial; overflow: auto; padding-bottom: 40px; }
+    body.pinnedExpanded .pinned-box.expandable { max-height: initial; overflow: auto; padding-bottom: 70px; }
     body.pinnedExpanded .pinned-box .handle-text::after { content: "Collapse"; }
     .pinned-box .handle-text::after { content: "Expand"; }
     body:not(.pinnedExpanded) .pinned-box .record { pointer-events: none; }
@@ -181,7 +181,8 @@
       let highlight = null;
       if (unpinned.length > 0) {
         const recent = unpinned.find((r) => r.recent && r.active);
-        highlight = recent || unpinned
+        const today = unpinned.find((r) => r.today && r.active);
+        highlight = recent || today || unpinned
           .filter((r) => r.active)
           .reduce((prev, current) => {
             return (!current.days || (prev && prev.days > current.days)) ? prev : current;
